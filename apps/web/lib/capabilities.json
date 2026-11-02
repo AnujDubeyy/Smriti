@@ -1,0 +1,26 @@
+{
+  "en-IN": {
+    "ui": "available",
+    "stt": "off",
+    "tts": "off",
+    "conversationLLM": "off",
+    "clinicalAssessments": "off",
+    "nativeReview": "not-applicable"
+  },
+  "hi-IN": {
+    "ui": "beta",
+    "stt": "off",
+    "tts": "off",
+    "conversationLLM": "off",
+    "clinicalAssessments": "off",
+    "nativeReview": "pending"
+  },
+  "mr-IN": {
+    "ui": "beta",
+    "stt": "off",
+    "tts": "off",
+    "conversationLLM": "off",
+    "clinicalAssessments": "off",
+    "nativeReview": "pending"
+  }
+}
