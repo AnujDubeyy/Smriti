@@ -1,7 +1,21 @@
 "use client";
-import Link from "next/link";
-import {usePathname} from "next/navigation";
-import {useState} from "react";
-const pillars=["assessment","companionship","monitoring"] as const;
-const content={patient:{assessment:"No activities assigned",companionship:"Your conversation space",monitoring:"Your sessions"},caregiver:{assessment:"Caregiver activities",companionship:"Your family Life Book",monitoring:"Daily observations"},clinician:{assessment:"Assessment registry",companionship:"Support preferences",monitoring:"Care review"}};
-export default function Shell(){const path=usePathname(); const pillar=pillars.find(p=>path===`/${p}`)??"companionship";const [role,setRole]=useState<keyof typeof content>("patient");return <><header><Link href="/">Smriti</Link><label>Preview role <select value={role} onChange={e=>setRole(e.target.value as keyof typeof content)}><option value="patient">Patient</option><option value="caregiver">Caregiver</option><option value="clinician">Clinician</option></select></label></header><main id="main"><p className="eyebrow">DEMO PREVIEW · ENGLISH</p><h1 className={pillar}>{pillar[0].toUpperCase()+pillar.slice(1)}</h1><section className="empty"><h2>{content[role][pillar]}</h2><p>{pillar==="companionship"?"Voice conversations will become available after speech services and consent are configured.":pillar==="assessment"?"Activities will appear here when a care team assigns them. No clinical instruments are enabled in this preview.":"No sessions or observations have been recorded."}</p><p className="note">Role selection previews layout only. Authentication and patient access are not configured.</p></section><Link href="/">Back to welcome</Link></main><nav aria-label="Primary navigation">{pillars.map(p=><Link key={p} className={p} href={"/"+p} aria-current={p===pillar?"page":undefined}>{p[0].toUpperCase()+p.slice(1)}</Link>)}</nav></>}
+import Link from 'next/link';
+import {usePathname} from 'next/navigation';
+import {useSyncExternalStore} from 'react';
+import {usePreferences} from './preferences';
+import {messages,type Locale} from '../lib/messages';
+const pillars=['assessment','companionship','monitoring'] as const;
+const roles=['patient','caregiver','clinician'] as const;
+function subscribe(callback:()=>void){window.addEventListener('online',callback);window.addEventListener('offline',callback);return ()=>{window.removeEventListener('online',callback);window.removeEventListener('offline',callback);};}
+export default function Shell(){
+ const path=usePathname();const index=Math.max(0,pillars.findIndex(p=>path===`/${p}`));const pillar=pillars[index];
+ const {role,setRole,locale,setLocale}=usePreferences();const t=messages[locale];
+ const online=useSyncExternalStore(subscribe,()=>navigator.onLine,()=>true);
+ return <div lang={locale}>
+ <a className="skip-link" href="#main">{t.skip}</a>
+ <header><Link href="/">Smriti</Link><label>{t.language}<select value={locale} onChange={e=>setLocale(e.target.value as Locale)}><option value="en">English</option><option value="hi">हिन्दी · Beta</option><option value="mr">मराठी · Beta</option></select></label><label>{t.role}<select value={role} onChange={e=>setRole(e.target.value as typeof role)}>{roles.map((r,i)=><option key={r} value={r}>{t.roles[i]}</option>)}</select></label></header>
+ {!online?<p role="status" className="offline">{t.offline}</p>:null}
+ <main id="main" tabIndex={-1}><p className="eyebrow">{t.demo}</p><h1 className={pillar}>{t.tabs[index]}</h1><section className="empty"><h2>{t.titles[roles.indexOf(role)][index]}</h2><p>{t.descriptions[index]}</p><p className="note">{t.disclaimer}</p></section><Link href="/" onClick={()=>setLocale('en')}>{t.back}</Link></main>
+ <nav aria-label={t.nav}>{pillars.map((p,i)=><Link key={p} className={p} href={'/'+p} aria-current={p===pillar?'page':undefined}>{t.tabs[i]}</Link>)}</nav>
+ </div>;
+}
