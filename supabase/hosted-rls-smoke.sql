@@ -1,0 +1,30 @@
+-- Synthetic, transaction-scoped smoke check. All fixture rows are rolled back.
+begin;
+select set_config('smriti.test_user',gen_random_uuid()::text,true);
+insert into auth.users(id,email,email_confirmed_at,is_anonymous) values(current_setting('smriti.test_user')::uuid,'smriti-transaction-fixture@example.invalid',now(),false);
+select set_config('request.jwt.claim.sub',current_setting('smriti.test_user'),true);
+select set_config('request.jwt.claims',jsonb_build_object('sub',current_setting('smriti.test_user'),'role','authenticated')::text,true);
+set local role authenticated;
+do $$declare p uuid;s uuid;t uuid:=gen_random_uuid();r jsonb;begin
+ p:=(public.smriti_command('create_patient','{"name":"Synthetic hosted fixture","locale":"en-IN"}'::jsonb)->>'patient_id')::uuid;
+ if not exists(select 1 from public.patients where id=p and synthetic) then raise exception 'self profile failed';end if;
+ if exists(select 1 from public.clinical_notes where patient_id=p) then raise exception 'clinical privacy failed';end if;
+ begin perform public.smriti_command('workspace',jsonb_build_object('patient_id',gen_random_uuid()));raise exception 'cross patient access unexpectedly allowed';exception when insufficient_privilege then null;end;
+ perform public.smriti_command('consent',jsonb_build_object('patient_id',p,'purpose','care_relationship','enabled',true));
+ begin perform public.smriti_voice('start',jsonb_build_object('patient_id',p,'locale','en-IN'));raise exception 'capture without consent allowed';exception when insufficient_privilege then null;end;
+ perform public.smriti_command('consent',jsonb_build_object('patient_id',p,'purpose','audio_capture','enabled',true));
+ s:=(public.smriti_voice('start',jsonb_build_object('patient_id',p,'locale','en-IN'))->>'id')::uuid;
+ r:=public.smriti_voice('claim',jsonb_build_object('session_id',s,'turn_id',t,'hash',repeat('a',64)));
+ if (r->>'duplicate')::boolean then raise exception 'initial claim duplicate';end if;
+ r:=public.smriti_voice('claim',jsonb_build_object('session_id',s,'turn_id',t,'hash',repeat('a',64)));
+ if not (r->>'duplicate')::boolean then raise exception 'duplicate not detected';end if;
+ perform public.smriti_voice('reserve_response',jsonb_build_object('session_id',s,'turn_id',t));
+ perform public.smriti_voice('finish',jsonb_build_object('session_id',s,'turn_id',t,'transcript','Synthetic fixture','result',jsonb_build_object('reply','Hello'),'metadata',jsonb_build_object('mode','mock')));
+ if exists(select 1 from public.voice_turns where id=t and (transcript is not null or result is not null)) then raise exception 'unconsented retention';end if;
+ perform public.smriti_command('consent',jsonb_build_object('patient_id',p,'purpose','audio_capture','enabled',false));
+ begin perform public.smriti_voice('check',jsonb_build_object('session_id',s));raise exception 'withdrawal did not stop session';exception when insufficient_privilege then null;end;
+ begin update public.app_users set clinician_verification_status='verified' where id=auth.uid();raise exception 'self verification allowed';exception when insufficient_privilege then null;end;
+end$$;
+reset role;
+select 'PASS: hosted self-onboarding, cross-patient denial, clinical privacy, capture consent, turn deduplication, no-retention, withdrawal and self-verification denial' as result;
+rollback;

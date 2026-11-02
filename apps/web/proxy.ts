@@ -24,4 +24,4 @@ export async function proxy(request: NextRequest) {
  response.headers.set('Referrer-Policy','no-referrer');
  return response;
 }
-export const config = { matcher: ['/login','/signup','/patients/:path*','/permissions/:path*','/auth/:path*','/api/:path*'] };
+export const config = { matcher: ['/login','/signup','/patients/:path*','/permissions/:path*','/auth/:path*','/api/:path*','/onboarding','/accept-invite','/recover','/reset-password','/companionship','/monitoring'] };

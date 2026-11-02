@@ -23,5 +23,5 @@ export function AuthForm({mode,configured}:{mode:'login'|'signup';configured:boo
  <label className="field">{t.password}<input name="password" type="password" autoComplete={mode==='login'?'current-password':'new-password'} minLength={12} maxLength={128} aria-describedby="password-hint" required disabled={!configured}/></label>
  <p id="password-hint">{t.passwordHint}</p><button className="button" disabled={!configured||status==='busy'||status==='confirmation'}>{status==='busy'?t.busy:t.submit}</button>
  </form><p role="status" aria-live="polite">{status==='error'?t.error:status==='confirmation'?t.confirm:''}</p>
- <div className="actions"><Link href={mode==='login'?'/signup':'/login'}>{mode==='login'?t.signup:t.login}</Link><Link href="/">{t.preview}</Link></div></section>;
+ <div className="actions"><Link href={mode==='login'?'/signup':'/login'}>{mode==='login'?t.signup:t.login}</Link><Link href="/">{t.preview}</Link><Link href="/recover">Forgot password?</Link></div></section>;
 }

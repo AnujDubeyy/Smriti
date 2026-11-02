@@ -27,6 +27,6 @@ export function AppShell({ children }: { children: React.ReactNode }) {
  </div></header><div className="app-body"><PillarNav /><div className="content-column">
  {!online ? <div role="status" className="offline-notice">{t.offline}</div> : null}
  <main id="main" tabIndex={-1}>{children}</main>
- <footer className="app-footer"><p>{isPreview ? t.disclaimer : a.privacy}</p>{locale !== 'en-IN' ? <p>{t.beta}</p> : null}<PwaControls /></footer>
+ <footer className="app-footer"><p>{a.privacy}</p>{locale !== 'en-IN' ? <p>{t.beta}</p> : null}<PwaControls /></footer>
  </div></div></div>;
 }

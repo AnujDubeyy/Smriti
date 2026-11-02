@@ -1,46 +1,44 @@
 # Smriti
 
-Smriti's Phase 1 foundation and first Phase 2 increment: an accessible, multilingual care-app preview. The three spaces are **Assessment → Companionship → Monitoring**, with clearly labelled patient, caregiver and clinician previews.
+Smriti is a synthetic-data care-app prototype with Assessment → Companionship → Monitoring navigation. Phase 2 identity/consent workflows and Phase 3 speech/AI plumbing are implemented. Live provider and device acceptance checks remain open; this is not a clinical release.
 
-This repository is independent of Cybrion Consulting. No Cybrion repository, deployment, domain, database or credentials are used.
+This repository is independent of Cybrion Consulting. Its database is the dedicated Smriti project `yuaodxigakqkfjsmtoat`. Cybrion resources and credentials are not used.
 
-## Run
+## Run locally
 
 ```sh
 cd apps/web
 npm ci
-# Optional: configure a dedicated Smriti project using .env.example.
+# Keep your existing .env.local. Use .env.example only to check variable names.
 npm run dev
 ```
 
-For a production-build preview:
+Open http://localhost:3000. Existing users should pull this revision first. Never commit `.env.local` or paste API keys into chat. Node >=22.18 is required.
+
+- `/voice`: public deterministic mock demo; no API keys, account or microphone required for the synthetic sample.
+- `/signup` → confirm email → `/patients/select` → `/onboarding`: create a fictional self-profile.
+- Open the profile permissions page and separately enable **Care relationship** and **Process microphone audio**. Then choose **Talk to Smriti**.
+- With both `GNANI_API_KEY_ID` and `GEMINI_API_KEY` configured server-side, `VOICE_PROVIDER=auto` selects real Gnani Prisma STT → Gemini → Timbre TTS. Otherwise it clearly labels mock providers. Restart Next after environment changes.
+- Record up to 29 seconds, finish, review/edit the transcript, confirm, then play the response. Stop clears local conversation state and releases the microphone.
+- **Logs and summaries** accepts fictional human-confirmed observations and generates evidence-linked drafts. It does not analyze clinical notes, diagnose, score, or fetch medical information from the web.
+
+Free Gemini requests are restricted to synthetic profiles because its free service may use submitted content for product improvement. Do not enter real patient data. No paid endpoint or production deployment has been created. Provider credits/quotas still apply; the app has limits and does not automatically retry failed calls.
+
+## Checks and status
 
 ```sh
+npm test
+npm run lint
+npm run typecheck
 npm run build
-npm run preview -- --hostname 0.0.0.0 --port 3000
 ```
 
-Checks: `npm test`, `npm run lint`, `npm run typecheck`, `npm run build`.
+See [Phase 2 evidence](docs/progress/PHASE-02.md), [Phase 3 evidence](docs/progress/PHASE-03.md), [local setup](docs/architecture/PHASE-2-SETUP.md), [Gemini context contract](docs/voice/GEMINI_CONTEXT.md) and [speech contract](docs/voice/GNANI_ADAPTER.md).
 
-## Current status
+The later Life Book authoring, full emotional-companionship controller, clinical assessment, monitoring trends and clinician review phases remain outside this increment. The Assessment pillar remains a foundation preview. Existing English/Hindi/Marathi shell dictionaries are preserved; the new account/voice workflow instructions are primarily English and require translation/native review.
 
-- Next.js App Router, strict TypeScript and Tailwind; responsive three-tab navigation.
-- Supplied Smriti artwork, self-hosted Nunito, Baloo 2 and Noto Sans Devanagari.
-- Complete English, Hindi and Marathi interface dictionaries. Hindi/Marathi remain beta pending native-speaker review.
-- Role preview and language selection survive client-side navigation; refresh resets them. A role selection grants no permissions.
-- Loading, retry/error, not-found and offline states; skip link, keyboard controls, route focus and reduced-motion support.
-- PWA metadata, install-event handling and a deliberately limited public offline shell.
+## Privacy and assets
 
-**No live patient records, authentication service, clinical assessment, microphone, AI or speech service is connected.** Phase 2 now includes server-side auth code, protected patient APIs, a patient selector, and a database migration with row-level access controls. These remain unconfigured until a separate Smriti Supabase project is provisioned. All clinical and voice capabilities remain disabled. See [Phase 2 progress](docs/progress/PHASE-02.md).
+Authenticated pages/APIs use no-store. The service worker caches only a fixed public shell/artwork/font list, never private HTML, conversations or audio. Audio stays in memory for processing and is never retained. Reviewed transcript storage requires separate current consent; withdrawing that consent clears stored turn text. Human care logs are separate explicit records, not automatic transcript retention.
 
-## Privacy and offline behavior
-
-The service worker precaches a fixed list of public artwork, fonts and offline-shell files, using requests without credentials. It never saves navigation responses, API responses, audio, conversations, patient data or React Server Component payloads. Failed navigations receive the public offline page. Role/locale preferences and displayed patient data are not persisted in browser storage. When authentication is configured, server-managed HttpOnly cookies carry the Supabase session; private routes and API responses use no-store caching.
-
-Installability and real offline reload require a secure context (HTTPS or an eligible localhost origin). The HTTP managed preview cannot establish the device-install acceptance gate. See [Phase 1 evidence and remaining acceptance checks](docs/progress/PHASE-01.md).
-
-## Sources and licenses
-
-`DESIGN.md` is the canonical design contract; `prompt.md` defines the phase scope. User-supplied originals are preserved under `assets/`; optimized display copies are in `apps/web/public/brand/`. No third-party rights are asserted for supplied branding. Font OFL licenses are included beside each font. See [asset provenance](docs/qa/ASSETS.md).
-
-No production deployment is performed by this phase.
+`DESIGN.md` defines visuals; `prompt.md` defines scope. Supplied artwork is preserved in `assets/`; fonts carry their licenses. The mock voice fixture has its Flite license beside it under `apps/web/public/voice/`.
