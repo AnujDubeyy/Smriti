@@ -1,6 +1,6 @@
 # Smriti
 
-Smriti's Phase 1 foundation: an accessible, multilingual care-app preview. The three spaces are **Assessment → Companionship → Monitoring**, with clearly labelled patient, caregiver and clinician previews.
+Smriti's Phase 1 foundation and first Phase 2 increment: an accessible, multilingual care-app preview. The three spaces are **Assessment → Companionship → Monitoring**, with clearly labelled patient, caregiver and clinician previews.
 
 This repository is independent of Cybrion Consulting. No Cybrion repository, deployment, domain, database or credentials are used.
 
@@ -9,6 +9,7 @@ This repository is independent of Cybrion Consulting. No Cybrion repository, dep
 ```sh
 cd apps/web
 npm ci
+# Optional: configure a dedicated Smriti project using .env.example.
 npm run dev
 ```
 
@@ -30,11 +31,11 @@ Checks: `npm test`, `npm run lint`, `npm run typecheck`, `npm run build`.
 - Loading, retry/error, not-found and offline states; skip link, keyboard controls, route focus and reduced-motion support.
 - PWA metadata, install-event handling and a deliberately limited public offline shell.
 
-**No patient records, authentication, clinical assessment, microphone, AI or speech service is connected.** Phase 2 implements actual authentication and patient-specific authorization. All clinical and voice capabilities remain disabled.
+**No live patient records, authentication service, clinical assessment, microphone, AI or speech service is connected.** Phase 2 now includes server-side auth code, protected patient APIs, a patient selector, and a database migration with row-level access controls. These remain unconfigured until a separate Smriti Supabase project is provisioned. All clinical and voice capabilities remain disabled. See [Phase 2 progress](docs/progress/PHASE-02.md).
 
 ## Privacy and offline behavior
 
-The service worker precaches a fixed list of public artwork, fonts and offline-shell files, using requests without credentials. It never saves navigation responses, API responses, audio, conversations, patient data or React Server Component payloads. Failed navigations receive the public offline page. No browser storage contains role, locale or patient information.
+The service worker precaches a fixed list of public artwork, fonts and offline-shell files, using requests without credentials. It never saves navigation responses, API responses, audio, conversations, patient data or React Server Component payloads. Failed navigations receive the public offline page. Role/locale preferences and displayed patient data are not persisted in browser storage. When authentication is configured, server-managed HttpOnly cookies carry the Supabase session; private routes and API responses use no-store caching.
 
 Installability and real offline reload require a secure context (HTTPS or an eligible localhost origin). The HTTP managed preview cannot establish the device-install acceptance gate. See [Phase 1 evidence and remaining acceptance checks](docs/progress/PHASE-01.md).
 
