@@ -127,6 +127,23 @@ test('doctor QR is single-use and does not bypass caretaker consent',async()=>{
   assert.equal(saved.rows[0].care_details.clinical_intake.blood_group,'A+');
   assert.equal(saved.rows[0].care_details.clinical_intake.dementia_stage,'mild');
   assert.equal(saved.rows[0].care_details.relationship,'son');
+  await db.query("select set_config('request.jwt.claim.sub',$1,true)",[doctor]);
+  const revised={
+   patient_id:pid,clinical_intake:{
+    blood_group:'B+',diagnoses:['mci'],diagnosis_status:'confirmed_by_clinician',
+    dementia_stage:'not_assessed',daily_support:'daily',
+    communication_support:['short_sentences'],other_condition:''
+   }
+  };
+  await db.query('select public.smriti_update_doctor_intake($1::jsonb)',[JSON.stringify(revised)]);
+  const afterDoctor=await db.query('select care_details from public.patients where id=$1',[pid]);
+  assert.equal(afterDoctor.rows[0].care_details.clinical_intake.blood_group,'B+');
+  assert.equal(afterDoctor.rows[0].care_details.clinical_intake.diagnoses[0],'mci');
+  assert.equal(afterDoctor.rows[0].care_details.relationship,'son',
+   'clinician intake update should not overwrite caretaker details');
+  assert.equal((await db.query('select smriti_private.has_scope($1,$2) as allowed',[pid,'records:read'])).rows[0].allowed,false,
+   'updating a doctor-authored intake must not bypass caretaker clinician-sharing consent');
+
 
   await assert.rejects(db.query('select public.smriti_claim_caretaker_qr($1::jsonb)',[JSON.stringify({token_hash:hash,authorized:true})]),
    /qr_expired_or_used/);
