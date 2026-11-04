@@ -21,4 +21,13 @@ test('already aborted provider request passes cancellation downstream',async()=>
 
 test('diagnostic claims and unsupported personal family claims are rejected',()=>{assert.throws(()=>validateEvidence({...result,reply:'Your dementia is worsening.'},input),/unsafe_output/);assert.throws(()=>validateEvidence({reply:'Your son likes tea.',references:[],stop:false,findings:[],limitations:[]},{...input,mode:'companion',logs:[]}),/unsupported_personal_claim/);});
 
-test('Groq uses server authentication and validates structured replies',async()=>{const {groq}=await import('../lib/voice/groq.ts');const input={mode:'companion',locale:'hi-IN',text:'Hello',approved_context:[],logs:[],history:[]};const result=await groq(input,{key:'test-key',model:'llama-3.3-70b-versatile'},new AbortController().signal,async(url,init)=>{assert.equal(init.headers.Authorization,'Bearer test-key');assert.equal(JSON.parse(init.body).response_format.type,'json_object');return Response.json({choices:[{finish_reason:'stop',message:{content:JSON.stringify({reply:'Hello',references:[],stop:false,findings:[],limitations:[]})}}]});});assert.equal(result.reply,'Hello');});
+test('Groq uses server authentication and validates structured replies',async()=>{const {groq}=await import('../lib/voice/groq.ts');const input={mode:'companion',locale:'hi-IN',text:'Hello',approved_context:[],logs:[],history:[]};const result=await groq(input,{key:'test-key',model:'openai/gpt-oss-120b'},new AbortController().signal,async(url,init)=>{assert.equal(init.headers.Authorization,'Bearer test-key');assert.equal(JSON.parse(init.body).response_format.type,'json_object');assert.equal(JSON.parse(init.body).reasoning_effort,'low');return Response.json({choices:[{finish_reason:'stop',message:{content:JSON.stringify({reply:'Hello',references:[],stop:false,findings:[],limitations:[]})}}]});});assert.equal(result.reply,'Hello');});
+
+test('Groq model errors are reported separately from provider outages',async()=>{
+ const {groq}=await import('../lib/voice/groq.ts');
+ const config={key:'fake-key',model:'openai/gpt-oss-120b'};
+ const payload={mode:'companion',locale:'en-IN',text:'Hello',approved_context:[],logs:[],history:[]};
+ await assert.rejects(groq(payload,config,signal,async()=>new Response('',{status:404})),/ai_model_unavailable/);
+ await assert.rejects(groq(payload,config,signal,async()=>new Response('',{status:400})),/ai_request_rejected/);
+ await assert.rejects(groq(payload,config,signal,async()=>new Response('',{status:503})),/ai_unavailable/);
+});
