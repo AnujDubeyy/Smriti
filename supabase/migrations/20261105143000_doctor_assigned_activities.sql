@@ -67,7 +67,7 @@ DECLARE
  u uuid:=auth.uid();
  p uuid;
  aid uuid;
- assignment public.assessment_assignments;
+ assignment_id_found uuid;
  answers jsonb;
  done_id uuid;
 BEGIN
@@ -97,12 +97,12 @@ BEGIN
   IF jsonb_typeof(answers)<>'object' OR length(trim(coalesce(answers->>'response_text',''))) NOT BETWEEN 1 AND 1500
     OR length(coalesce(answers->>'caregiver_observation',''))>1200
   THEN RAISE EXCEPTION 'invalid_assessment_response' USING errcode='22023';END IF;
-  SELECT * INTO assignment FROM public.assessment_assignments
+  SELECT id INTO assignment_id_found FROM public.assessment_assignments
    WHERE id=aid AND patient_id=p AND status='assigned'
     AND intended_respondent IN ('patient','caregiver')
     AND instrument_code IN ('smriti_word_repeat_v1','smriti_category_fluency_v1','smriti_orientation_v1')
    FOR UPDATE;
-  IF assignment.id IS NULL THEN
+  IF assignment_id_found IS NULL THEN
    RAISE EXCEPTION 'assessment_already_completed' USING errcode='23505';END IF;
   INSERT INTO public.assessment_submissions
    (assignment_id,patient_id,respondent_user_id,responses,score_result,status)
