@@ -94,8 +94,10 @@ test('doctor QR is single-use and does not bypass caretaker consent',async()=>{
   const hash='a'.repeat(64);
   const intake={
    token_hash:hash,patient_name:'Fictional Patient',caretaker_name:'Fictional Caretaker',
-   relationship:'Child',date_of_birth:'1950-01-01',sex:'prefer_not_to_say',
-   family_count:3,locale:'hi-IN',support_notes:''
+   relationship:'daughter',relationship_other:'',date_of_birth:'1950-01-01',sex:'prefer_not_to_say',
+   family_count:3,locale:'hi-IN',support_notes:'',
+   blood_group:'A+',diagnoses:['alzheimers'],diagnosis_status:'confirmed_by_clinician',
+   dementia_stage:'mild',daily_support:'occasional',communication_support:['slower_pace'],other_condition:''
   };
   const created=await db.query('select public.smriti_issue_doctor_qr($1::jsonb) as result',[JSON.stringify(intake)]);
   const pid=created.rows[0].result.patient_id;
@@ -108,6 +110,22 @@ test('doctor QR is single-use and does not bypass caretaker consent',async()=>{
   assert.equal(claimed.rows[0].result.patient_id,pid);
   assert.equal((await db.query('select public.smriti_qr_session_ok() as allowed')).rows[0].allowed,true);
   assert.equal((await db.query('select smriti_private.has_scope($1,$2) as allowed',[pid,'records:read'])).rows[0].allowed,true);
+  const beforeSupport=await db.query('select public.smriti_conversation_support($1) as support',[pid]);
+  assert.deepEqual(beforeSupport.rows[0].support,{},'without personalization consent no clinical profile leaves Supabase');
+  await db.query("insert into public.consent_grants(patient_id,purpose,actor_id,authorization_basis) values($1,'personalization',$2,'prototype_qr_claim')",[pid,caretaker]);
+  const withSupport=await db.query('select public.smriti_conversation_support($1) as support',[pid]);
+  assert.equal(withSupport.rows[0].support.relationship,'daughter');
+  assert.equal(withSupport.rows[0].support.dementia_stage,'mild');
+  assert.ok(!Object.hasOwn(withSupport.rows[0].support,'blood_group'),'blood group must not be sent to AI');
+  const changed={patient_id:pid,patient_name:'Fictional Patient',caretaker_name:'Fictional Caretaker',
+   relationship:'son',relationship_other:'',date_of_birth:'1950-01-01',
+   sex:'prefer_not_to_say',family_count:3,support_notes:'Prefers quiet mornings'};
+  await db.query('select public.smriti_update_caretaker_profile($1::jsonb)',[JSON.stringify(changed)]);
+  const saved=await db.query('select care_details from public.patients where id=$1',[pid]);
+  assert.equal(saved.rows[0].care_details.clinical_intake.blood_group,'A+');
+  assert.equal(saved.rows[0].care_details.clinical_intake.dementia_stage,'mild');
+  assert.equal(saved.rows[0].care_details.relationship,'son');
+
   await assert.rejects(db.query('select public.smriti_claim_caretaker_qr($1::jsonb)',[JSON.stringify({token_hash:hash,authorized:true})]),
    /qr_expired_or_used/);
  }finally{await db.exec('rollback');}
