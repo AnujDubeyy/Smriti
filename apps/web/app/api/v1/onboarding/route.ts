@@ -6,7 +6,7 @@ const locale=z.enum(['en-IN','hi-IN','mr-IN']);
 const short=z.string().trim().min(2).max(120);
 const schema=z.discriminatedUnion('role',[
  z.object({
-  role:z.literal('doctor'),doctor_name:short,registration_number:z.string().trim().min(4).max(80),
+  role:z.literal('doctor'),doctor_name:short,
   organization:z.string().trim().max(160).default(''),
   specialty:z.string().trim().max(100).default(''),locale
  }).strict(),
@@ -40,21 +40,13 @@ export async function POST(request:Request){
 
   const preferences=data.role==='doctor'
    ? {onboarding_role:'doctor',display_name:data.doctor_name,preferred_locale:data.locale,
-      professional_profile:{registration_number:data.registration_number,
-       organization:data.organization,specialty:data.specialty}}
+      professional_profile:{organization:data.organization,specialty:data.specialty}}
    : {onboarding_role:'caregiver',display_name:data.caregiver_name,preferred_locale:data.locale};
 
   const {error:updateError}=await client.from('app_users').update(preferences).eq('id',user.id);
   if(updateError)throw updateError;
 
-  if(data.role==='doctor'){
-   // Verification is always a human-reviewed request, never granted at signup.
-   const {error}=await client.rpc('smriti_command',{
-    operation:'verification_request',input:{kind:'clinician'}
-   });
-   if(error)throw error;
-   return json({ok:true,next:'/doctor'});
-  }
+  if(data.role==='doctor')return json({ok:true,next:'/doctor'});
 
   const {role,...patientInput}=data;
   const {data:result,error}=await client.rpc('smriti_setup',{input:patientInput});
