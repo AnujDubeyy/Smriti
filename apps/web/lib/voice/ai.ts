@@ -19,16 +19,7 @@ export function validateEvidence(value:unknown,input:AIInput){
 }
 export function mockAI(input:AIInput):AIResult{return{reply:asksToStop(input.text)?'We can stop here.':'This is a demo response. We can take our time. Would you like a quiet moment?',references:[],stop:asksToStop(input.text),findings:[],limitations:['Deterministic mock; no AI analysis was performed.']};}
 /** Minimal JSON schema: Gemini accepts a subset of JSON Schema, not the full Zod export. */
-const outputSchema={
- type:'object',properties:{
-  reply:{type:'string'},references:{type:'array',items:{type:'string'}},
-  stop:{type:'boolean'},findings:{type:'array',items:{type:'object',properties:{
-   text:{type:'string'},source_ids:{type:'array',items:{type:'string'}},
-   quotes:{type:'array',items:{type:'object',properties:{source_id:{type:'string'},text:{type:'string'}},required:['source_id','text']}
-  },required:['text','source_ids','quotes']}},
-  limitations:{type:'array',items:{type:'string'}}
- },required:['reply','references','stop','findings','limitations']
-};
+const outputSchema={"type":"object","properties":{"reply":{"type":"string"},"references":{"type":"array","items":{"type":"string"}},"stop":{"type":"boolean"},"findings":{"type":"array","items":{"type":"object","properties":{"text":{"type":"string"},"source_ids":{"type":"array","items":{"type":"string"}},"quotes":{"type":"array","items":{"type":"object","properties":{"source_id":{"type":"string"},"text":{"type":"string"}},"required":["source_id","text"]}}},"required":["text","source_ids","quotes"]}},"limitations":{"type":"array","items":{"type":"string"}}},"required":["reply","references","stop","findings","limitations"]};
 /** No hidden retries or mock substitution. Provider errors are categorized without exposing prompts. */
 export async function gemini(input:AIInput,config:{key:string;model:string},signal:AbortSignal,transport:typeof fetch=fetch){
  if(asksToStop(input.text))return{...mockAI(input),reply:'We can stop here.',limitations:[]};
