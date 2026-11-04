@@ -1,0 +1,15 @@
+services:
+  - type: web
+    name: smriti-voice-gateway
+    runtime: node
+    rootDir: services/realtime-gateway
+    buildCommand: npm install --omit=dev
+    startCommand: node server.mjs
+    healthCheckPath: /health
+    envVars:
+      - key: GNANI_API_KEY_ID
+        sync: false
+      - key: SMRITI_GATEWAY_SECRET
+        sync: false
+      - key: SMRITI_ALLOWED_ORIGIN
+        sync: false
