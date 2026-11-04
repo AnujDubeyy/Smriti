@@ -1,2 +1,2 @@
-import {VoiceStudio} from '../../components/voice-studio';
-export default function Page(){return <VoiceStudio demo/>;}
+import {VoiceStudio} from '../../components/voice-call';
+export default function Page(){return <VoiceStudio/>;}
