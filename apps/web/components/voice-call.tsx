@@ -16,8 +16,6 @@ const LANGUAGES=[
 ] as const;
 const friendly:Record<string,string>={
  ai_auth:'The response service could not authenticate. Check the server API key.',
- ai_model_unavailable:'The selected AI model is not available for this API key.',
- ai_request_rejected:'The AI service rejected the request. Check the model and its configuration.',
  ai_response_invalid:'Smriti received an invalid response. Please try again.',
  ai_incomplete:'Smriti could not complete that reply. Please try again.',
  ai_unavailable:'The conversation provider is unavailable right now. Try again shortly.',
