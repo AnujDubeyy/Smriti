@@ -1,7 +1,7 @@
 import {randomBytes,createHash} from 'node:crypto';
 import {z} from 'zod';
-import {requireCare,CareError,failure} from '../../../../lib/care';
-import {json,sameOrigin,limitedBody} from '../../../../lib/auth/http';
+import {requireCare,CareError,failure} from '../../../../../lib/care';
+import {json,sameOrigin,limitedBody} from '../../../../../lib/auth/http';
 export const dynamic='force-dynamic';
 const input=z.object({
  patient_name:z.string().trim().min(2).max(120),caretaker_name:z.string().trim().min(2).max(120),
