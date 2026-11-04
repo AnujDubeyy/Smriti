@@ -2,7 +2,6 @@
 import Link from 'next/link';
 import {useRouter} from 'next/navigation';
 import {useState} from 'react';
-import styles from './auth-form.module.css';
 
 const errors:Record<string,string>={
  sign_in_failed:'Email or password is incorrect, or the email is not confirmed.',
@@ -17,7 +16,7 @@ export function AuthForm({mode,configured}:{mode:'login'|'signup';configured:boo
  const [error,setError]=useState('');
  const [confirmation,setConfirmation]=useState(false);
  async function submit(event:React.FormEvent<HTMLFormElement>){
-  event.preventDefault();if(!configured||busy)return;
+  event.preventDefault();if(busy)return;
   const form=event.currentTarget;
   const values=new FormData(form);
   setBusy(true);setError('');
@@ -36,28 +35,28 @@ export function AuthForm({mode,configured}:{mode:'login'|'signup';configured:boo
    setError(errors[code]||'Could not continue. Try again.');
   }finally{setBusy(false);}
  }
- return <section className={styles.layout}>
-  <div className={styles.heading}>
-   <span className={styles.kicker}>SMRITI</span>
+ return <section className="smriti-auth-layout">
+  <div className="smriti-auth-heading">
+   <span className="smriti-auth-kicker">SMRITI</span>
    <h1>{mode==='login'?'Welcome back':'Create your account'}</h1>
    <p>{mode==='login'?'Sign in to continue to your care workspace.'
     :'One account for either Doctor or Patient & Caregiver. You will choose your role and complete setup after signing in.'}</p>
   </div>
-  {confirmation?<div className={styles.confirmation} role="status">
+  {confirmation?<div className="smriti-auth-confirmation" role="status">
    <h2>Check your email</h2><p>We sent a confirmation link to your address. Open it, then sign in to finish your Smriti setup.</p>
-   <Link className={styles.primaryLink} href="/login">Go to sign in</Link>
-  </div>:<form className={styles.form} onSubmit={submit} aria-busy={busy}>
-   <label>Email address<input type="email" name="email" autoComplete="email" inputMode="email" required maxLength={254} placeholder="you@example.com" disabled={!configured}/></label>
+   <Link className="smriti-auth-primaryLink" href="/login">Go to sign in</Link>
+  </div>:<form className="smriti-auth-form" onSubmit={submit} aria-busy={busy}>
+   <label>Email address<input type="email" name="email" autoComplete="email" inputMode="email" required maxLength={254} placeholder="you@example.com" /></label>
    <label>Password<input type="password" name="password" autoComplete={mode==='login'?'current-password':'new-password'} minLength={12} maxLength={128} required disabled={!configured} placeholder="Enter your password"/></label>
-   {mode==='signup'?<p className={styles.hint}>Use at least 12 characters.</p>:null}
-   {!configured?<p className={styles.error} role="alert">Account services are not available. Check the Smriti Supabase settings.</p>:null}
-   {error?<p className={styles.error} role="alert">{error}</p>:null}
-   <button className={styles.primary} type="submit" disabled={!configured||busy}>{busy?'Please wait…':mode==='login'?'Sign in':'Create account'}</button>
+   {mode==='signup'?<p className="smriti-auth-hint">Use at least 12 characters.</p>:null}
+   {!configured?<p className="smriti-auth-error" role="alert">Account setup is temporarily unavailable. Please try the main Smriti site.</p>:null}
+   {error?<p className="smriti-auth-error" role="alert">{error}</p>:null}
+   <button className="smriti-auth-primary" type="submit" disabled={!configured||busy}>{busy?'Please wait…':mode==='login'?'Sign in':'Create account'}</button>
   </form>}
-  <div className={styles.links}>
+  <div className="smriti-auth-links">
    {mode==='login'?<><span>New to Smriti? <Link href="/signup">Create an account</Link></span><Link href="/recover">Forgot password?</Link></>
    :<span>Already have an account? <Link href="/login">Sign in</Link></span>}
   </div>
-  <p className={styles.footnote}>After signing in, choose <strong>Doctor</strong> or <strong>Patient & Caregiver</strong>. Clinical access requires independent approval.</p>
+  <p className="smriti-auth-footnote">After signing in, choose <strong>Doctor</strong> or <strong>Patient & Caregiver</strong>. Clinical access requires independent approval.</p>
  </section>;
 }
