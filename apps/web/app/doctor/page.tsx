@@ -1,3 +1,4 @@
+import {DoctorQrForm} from '../../components/doctor-qr-form';
 import Link from 'next/link';
 import {redirect} from 'next/navigation';
 import {requireAccount} from '../../lib/page-access';
@@ -22,17 +23,18 @@ export default async function DoctorWorkspace(){
   <h1>Welcome, {full}</h1>
   <p className="intro">Review authorized fictional patient profiles and their monitoring information.</p>
   <div className="doctor-onboarding-next">
-   <h2>Your patients</h2>
+   <h2>Your connected patients</h2>
    {membershipError||patientError?<p role="alert">Could not load your patient connections. Please try again.</p>
     :patients?.length
      ?<ul className="doctor-patient-list">{patients.map(p=><li key={p.id}><strong>{p.preferred_name}</strong><Link className="button secondary" href={'/doctor/patient/'+p.id}>Open care record</Link></li>)}</ul>
-     :<p>No fictional patients are connected yet. Ask a caregiver to invite this account using your login email.</p>}
-   <Link className="button monitoring" href="/accept-invite">Accept patient invitation</Link>
+     :<p>No caretaker has shared a fictional patient profile with you yet. Create a profile below and share its QR code.</p>}
+
   </div>
+  <DoctorQrForm/>
   <div className="doctor-status">
    <div><strong>Account details</strong><p>Doctor workspace</p></div>
    <Link className="button secondary" href="/onboarding">Edit your details</Link>
   </div>
-  <p className="small">This is a test environment for fictional patient profiles. Patient-specific access requires an invitation and permission to share, not a doctor verification request.</p>
+  <p className="small">Doctor-created profiles connect to caretakers through one-time QR invitations. Clinician access to patient information still requires caretaker sharing permission.</p>
  </section>;
 }
