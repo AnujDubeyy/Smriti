@@ -155,7 +155,7 @@ export function VoiceStudio({patientId}:{patientId?:string;demo?:boolean}){
   }
  },[append,finishAnswer,resetCapture,update]);
  const processClip=useCallback(async(frames:Float32Array[],sampleRate:number)=>{
-  if(!active.current||stageRef.current==='thinking')return;
+  if(!active.current)return;
   const version=epoch.current;update('thinking','Understanding your words…');setError('');
   abort.current?.abort();abort.current=new AbortController();
   try{
