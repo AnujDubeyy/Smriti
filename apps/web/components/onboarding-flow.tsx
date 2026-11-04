@@ -7,7 +7,7 @@ import styles from './onboarding-flow.module.css';
 type Role='doctor'|'caregiver';
 const languages=[['en-IN','English'],['hi-IN','हिन्दी'],['mr-IN','मराठी']] as const;
 type Intake={caregiver_name:string;relationship:string;patient_name:string;date_of_birth:string;sex:string;family_count:string;support_notes:string;locale:string;audio_capture:boolean;transcript_retention:boolean;personalization:boolean;authorized:boolean;};
-type Doctor={doctor_name:string;registration_number:string;organization:string;specialty:string;locale:string};
+type Doctor={doctor_name:string;organization:string;specialty:string;locale:string};
 const readable:Record<string,string>={
  invalid_request:'Check the details and try again.',
  unauthorized:'Your session expired. Please sign in again.',
@@ -36,7 +36,6 @@ export function OnboardingFlow({initialRole=null,initialName='',initialPatient={
  });
  const [doctor,setDoctor]=useState<Doctor>({
   doctor_name:String(initialProfessional.doctor_name||initialName||''),
-  registration_number:String(initialProfessional.registration_number||''),
   organization:String(initialProfessional.organization||''),specialty:String(initialProfessional.specialty||''),
   locale:String(initialProfessional.locale||'en-IN')
  });
@@ -60,8 +59,8 @@ export function OnboardingFlow({initialRole=null,initialName='',initialPatient={
   <header className={styles.top}>
    <span className={styles.kicker}>YOUR SMRITI ACCOUNT</span>
    <h1>{step===0?'Who are you?':role==='doctor'?'Set up your doctor profile':step===1?'Tell us about you':step===2?'About the patient':'Choose permissions'}</h1>
-   <p>{step===0?'Pick how you will use Smriti. Your clinical permissions are verified separately.'
-    :role==='doctor'?'Complete your professional profile. Clinical access is reviewed independently.'
+   <p>{step===0?'Choose your workspace. Patient records remain private and shared only with permission.'
+    :role==='doctor'?'Enter basic details for your doctor workspace. Start with fictional patient profiles.'
     :step===1?'Who is looking after the patient?'
     :step===2?'Start with the essentials. Stories and daily observations come later.'
     :'Decide what Smriti can use. Every choice can be changed later.'}</p>
@@ -80,17 +79,16 @@ export function OnboardingFlow({initialRole=null,initialName='',initialPatient={
    <button type="button" className={styles.choice} onClick={()=>{setRole('doctor');setStep(1);}}>
     <Image src="/brand/monitoring.webp" alt="" width={70} height={70}/>
     <strong>Doctor</strong>
-    <p>Create your professional profile, request verification and connect to authorized patients.</p>
+    <p>Set up your workspace and connect to fictional patients who invite you.</p>
     <b>Continue</b>
    </button>
   </div>:<form className={styles.form} onSubmit={submit}>
    {role==='doctor'?<div className={styles.group}>
     <label>Full name<input value={doctor.doctor_name} autoComplete="name" minLength={2} maxLength={120} required onChange={e=>editDoctor('doctor_name',e.target.value)}/></label>
-    <label>Medical registration number<input value={doctor.registration_number} minLength={4} maxLength={80} required onChange={e=>editDoctor('registration_number',e.target.value)}/></label>
     <label>Hospital or organization (optional)<input value={doctor.organization} maxLength={160} onChange={e=>editDoctor('organization',e.target.value)}/></label>
     <label>Specialty (optional)<input value={doctor.specialty} maxLength={100} onChange={e=>editDoctor('specialty',e.target.value)}/></label>
     <label>Preferred language<select value={doctor.locale} onChange={e=>editDoctor('locale',e.target.value)}>{languages.map(([id,name])=><option key={id} value={id}>{name}</option>)}</select></label>
-    <p className={styles.notice}>Doctor accounts are not granted clinical access until identity verification and patient consent are approved.</p>
+    <p className={styles.notice}>Use fictional profiles while developing Smriti. Each patient connection still requires an invitation and permission to share.</p>
    </div>:step===1?<div className={styles.group}>
     <label>Your name<input value={intake.caregiver_name} autoComplete="name" minLength={2} maxLength={120} required onChange={e=>edit('caregiver_name',e.target.value)}/></label>
     <label>Your relationship to the patient<input placeholder="e.g. Daughter, spouse" value={intake.relationship} minLength={2} maxLength={100} required onChange={e=>edit('relationship',e.target.value)}/></label>
