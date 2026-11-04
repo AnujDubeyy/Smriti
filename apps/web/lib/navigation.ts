@@ -15,3 +15,18 @@ export function showCareNavigation(path:string):boolean{
 export function isPillarActive(path:string,pillar:string):boolean{
  return path==='/'+pillar||path.startsWith('/'+pillar+'/');
 }
+
+export function showDoctorNavigation(path:string):boolean{
+ return isDoctorRoute(path);
+}
+export const doctorSections=[
+ {href:'/doctor',label:'Patients',icon:'patients'},
+ {href:'/doctor/assessments',label:'Assessments',icon:'assessments'},
+ {href:'/doctor/monitoring',label:'Monitoring',icon:'monitoring'},
+ {href:'/doctor/conversations',label:'Conversations',icon:'conversations'}
+] as const;
+export function isDoctorSectionActive(path:string,section:string):boolean{
+ if(section==='/doctor')return path==='/doctor';
+ if(section==='/doctor/monitoring')return path.startsWith('/doctor/monitoring')||path.startsWith('/doctor/patient/');
+ return path===section||path.startsWith(section+'/');
+}
