@@ -1,6 +1,6 @@
 import {z} from 'zod';
-import {requireCare,CareError,failure} from '../../../../lib/care';
-import {json,sameOrigin,limitedBody} from '../../../../lib/auth/http';
+import {requireCare,CareError,failure} from '../../../../../lib/care';
+import {json,sameOrigin,limitedBody} from '../../../../../lib/auth/http';
 export const dynamic='force-dynamic';
 const schema=z.object({email:z.email().max(254).optional(),password:z.string().min(12).max(128).optional()})
  .strict().refine(x=>!!x.email!==!!x.password);
