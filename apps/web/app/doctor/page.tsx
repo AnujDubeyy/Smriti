@@ -2,11 +2,13 @@ import Link from 'next/link';
 import {redirect} from 'next/navigation';
 import {authenticatedClient} from '../../lib/auth/access';
 import {DoctorQrForm} from '../../components/doctor-qr-form';
+import {DoctorIntakeEditor} from '../../components/doctor-intake-editor';
 export const dynamic='force-dynamic';
 
 type PatientInvite={
  patient_id:string;patient_name:string;caretaker_name:string;
  status:'joined'|'pending'|'expired';sharing_enabled:boolean;
+ clinical_intake?:{blood_group?:string;diagnoses?:string[];diagnosis_status?:string;dementia_stage?:string;daily_support?:string;communication_support?:string[];other_condition?:string};
 };
 export default async function DoctorWorkspace(){
  // authenticatedClient already verifies the session. Avoid a second auth.getUser
@@ -38,6 +40,7 @@ export default async function DoctorWorkspace(){
          ?item.sharing_enabled?'Caretaker connected · Sharing enabled':'Caretaker connected · Sharing not yet enabled'
          :item.status==='expired'?'Invitation expired':'Waiting for caretaker to scan QR'}
        </span>
+       <DoctorIntakeEditor patientId={item.patient_id} initial={item.clinical_intake||null}/>
       </div>
       {item.status==='joined'&&item.sharing_enabled
        ?<Link className="button secondary" href={'/doctor/patient/'+item.patient_id}>Open monitoring</Link>
