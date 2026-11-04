@@ -203,7 +203,7 @@ export function VoiceStudio({patientId}:{patientId?:string;demo?:boolean}){
      }else if(data.type==='transcript'&&typeof data.text==='string'&&data.text.trim()&&stageRef.current!=='thinking'&&stageRef.current!=='speaking'){
       void handleSpeech(data.text,'stream');
      }else if(data.type==='speech_start'&&stageRef.current==='listening')update('hearing','I can hear you…');
-     else if(data.type==='error')setError('Prisma streaming: '+String(data.message||'connection error').slice(0,140));
+     else if(data.type==='error'){setError('Prisma streaming is unavailable. Switching to automatic recording.');socket.close();}
     }catch{setError('Speech stream sent an unreadable event.');}
    };
    socket.onclose=()=>{
