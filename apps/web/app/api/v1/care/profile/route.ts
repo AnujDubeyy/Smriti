@@ -1,13 +1,16 @@
 import {z} from 'zod';
+import {relationshipOptions} from '../../../../../lib/clinical-intake';
 import {requireCare,CareError,failure} from '../../../../../lib/care';
 import {json,sameOrigin,limitedBody} from '../../../../../lib/auth/http';
 export const dynamic='force-dynamic';
 const schema=z.object({
  patient_id:z.uuid(),patient_name:z.string().trim().min(2).max(120),
- caretaker_name:z.string().trim().min(2).max(120),relationship:z.string().trim().min(2).max(100),
+ caretaker_name:z.string().trim().min(2).max(120),
+ relationship:z.enum(relationshipOptions.map(x=>x[0]) as [string,...string[]]),
+ relationship_other:z.string().trim().max(100).default(''),
  date_of_birth:z.iso.date(),sex:z.enum(['female','male','intersex','prefer_not_to_say']),
  family_count:z.number().int().min(0).max(50),support_notes:z.string().trim().max(2000)
-}).strict();
+}).strict().refine(x=>x.relationship!=='other'||x.relationship_other.length>=2);
 export async function PATCH(request:Request){
  try{
   if(!sameOrigin(request))throw new CareError('forbidden',403);
