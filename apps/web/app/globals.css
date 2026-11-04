@@ -19,3 +19,39 @@
 .section-title{margin-top:2rem}.consent-list{display:grid;gap:1rem;margin-block:1.5rem}.consent-list label,.consent-choice{display:flex;gap:.75rem;align-items:flex-start;padding:.75rem;background:white;border:1px solid var(--border);border-radius:.75rem}input[type=checkbox]{width:1.5rem;height:1.5rem;flex-shrink:0}textarea{font:inherit;min-height:7rem;width:100%;border:1px solid #898781;border-radius:.75rem;padding:.75rem;resize:vertical;color:var(--text);background:white}.voice-panel>p,.voice-panel>.actions{margin-block:1rem}audio{width:100%;max-width:35rem;margin-block:1rem}blockquote{border-left:3px solid var(--monitoring);padding-left:1rem;margin-inline:0}li{overflow-wrap:anywhere}form{max-width:38rem}button{max-width:100%}
 
 .entry-body{display:block;max-width:58rem}.auth-form input[type=checkbox]{width:1.4rem;min-height:1.4rem;vertical-align:middle;margin-right:.6rem}.auth-form>h2{margin-top:1rem}.account-link:is(button){border:0;background:none;text-decoration:underline;padding:0}.auth-form>label:has(input[type=checkbox]){font-size:1rem}
+
+/* Login-first care workflow: no public preview elements or disabled feature cards. */
+.smriti-entry{background:#faf9f6}
+.smriti-entry .app-header{justify-content:center;padding:17px 24px}
+.smriti-entry .brand-logo{width:135px}
+.smriti-entry .app-body{max-width:920px}
+.smriti-entry main{padding:clamp(24px,4vw,48px) 18px 36px}
+.care-home{max-width:900px;margin:0 auto}
+.care-home>h1{font-size:clamp(30px,5vw,42px);margin-bottom:10px;max-width:none}
+.care-home .intro{font-size:16px;line-height:1.5}
+.care-home-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:17px;margin:30px 0 22px}
+.care-home-tile{display:flex;flex-direction:column;align-items:flex-start;gap:10px;text-decoration:none;border-radius:20px;border:1px solid #e1ded6;padding:25px;min-height:235px;background:#fff;transition:transform .15s,border-color .15s}
+.care-home-tile:hover{border-color:#a6a197;transform:translateY(-2px)}
+.care-home-tile strong{font-size:22px;line-height:1.25;font-weight:850}
+.care-home-tile>span:not(.care-home-icon){font-size:14px;color:#635d54;line-height:1.5;flex:1}
+.care-home-tile>b{font-size:14px}
+.care-home-tile.talk{background:#fffae7;border-color:#e9d9a5}
+.care-home-tile.talk b{color:#725500}
+.care-home-tile.observe b{color:#1556e8}
+.care-home-tile.assessments b{color:#b72c33}
+.care-home-icon{display:grid;place-items:center;border-radius:50%;background:white;width:48px;height:48px;font-size:26px;color:#333}
+.care-home-links{display:flex;gap:18px;flex-wrap:wrap;padding-top:16px;font-size:14px}
+.care-home-links a{font-weight:750}
+.doctor-home,.doctor-patient{max-width:850px;margin:0 auto}
+.doctor-home>h1{max-width:none;margin-bottom:10px}
+.doctor-home>.intro{font-size:16px}
+.doctor-status{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:15px;padding:20px;border-radius:17px;border:1px solid #e3dfd6;background:white;margin:28px 0}
+.doctor-status strong{font-size:13px;color:#676159}
+.doctor-status p{font-size:18px;font-weight:850;margin-top:4px}
+.doctor-onboarding-next{border:1px solid #e2dcd1;background:#fff;border-radius:18px;padding:24px;margin-top:20px}
+.doctor-onboarding-next h2{margin-bottom:14px}
+.doctor-onboarding-next p{font-size:15px;line-height:1.6;margin:12px 0;color:#625d54}
+.doctor-patient-list{display:grid;gap:12px;padding:0;margin:18px 0;list-style:none}
+.doctor-patient-list li{display:flex;justify-content:space-between;gap:12px;align-items:center;padding:14px;background:#f8f7f3;border-radius:12px}
+.doctor-patient-list .button{min-height:44px}
+@media(max-width:640px){.care-home-grid{grid-template-columns:1fr}.care-home-tile{min-height:170px;padding:20px}.doctor-status{align-items:stretch}.doctor-status .button{width:100%}.doctor-onboarding-next{padding:19px}.care-home-links{flex-direction:column;gap:12px}.smriti-entry .app-header{padding:12px}.smriti-entry .brand-logo{width:115px}}
