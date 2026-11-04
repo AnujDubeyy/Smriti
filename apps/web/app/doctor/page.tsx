@@ -28,6 +28,11 @@ export default async function DoctorWorkspace(){
   <span className="eyebrow">DOCTOR WORKSPACE</span>
   <h1>Welcome, {account.display_name||'Doctor'}</h1>
   <p className="intro">Manage fictional patient profiles and connected caretakers.</p>
+  <div className="doctor-workspace-shortcuts" aria-label="Doctor workspace shortcuts">
+   <Link href="/doctor/assessments" className="button assessment">Assign assessments</Link>
+   <Link href="/doctor/monitoring" className="button monitoring">Monitoring</Link>
+   <Link href="/doctor/conversations" className="button secondary">Conversations</Link>
+  </div>
   <div className="doctor-onboarding-next">
    <h2>Your patients {count>0?'('+count+')':''}</h2>
    {rosterError?<p role="alert">Patient statuses could not be loaded. Refresh the page. Existing profiles have not been deleted.</p>
@@ -42,9 +47,13 @@ export default async function DoctorWorkspace(){
        </span>
        <DoctorIntakeEditor patientId={item.patient_id} initial={item.clinical_intake||null}/>
       </div>
-      {item.status==='joined'&&item.sharing_enabled
-       ?<Link className="button secondary" href={'/doctor/patient/'+item.patient_id}>Open monitoring</Link>
-       :null}
+      <div style={{display:'flex',flexWrap:'wrap',gap:8,justifyContent:'flex-end'}}>
+       {item.status==='joined'&&item.sharing_enabled?
+        <>
+         <Link className="button secondary" href={'/doctor/assessments?patient='+item.patient_id}>Assign assessment</Link>
+         <Link className="button secondary" href={'/doctor/patient/'+item.patient_id}>Open monitoring</Link>
+        </>:<Link className="button secondary" href={'/doctor/assessments?patient='+item.patient_id}>Assessment options</Link>}
+      </div>
      </li>)}</ul>
     :<p>No patients created yet. Use the form below to create your first profile and invite a caretaker by QR.</p>}
    {invitations.some(x=>x.status==='joined'&&!x.sharing_enabled)
