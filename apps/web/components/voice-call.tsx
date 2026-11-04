@@ -285,8 +285,10 @@ export function VoiceStudio({patientId}:{patientId?:string;demo?:boolean}){
  },[stage]);
  useEffect(()=>{
   const leave=()=>{if(active.current)endCall('Call disconnected.');};
+  const hidden=()=>{if(document.hidden&&active.current)endCall('Call ended when the app moved to the background.');};
   window.addEventListener('pagehide',leave);
-  return()=>{window.removeEventListener('pagehide',leave);leave();};
+  document.addEventListener('visibilitychange',hidden);
+  return()=>{window.removeEventListener('pagehide',leave);document.removeEventListener('visibilitychange',hidden);leave();};
  },[endCall]);
  const inCall=active.current&&stage!=='ended';
  const clockText=Math.floor(elapsed/60).toString().padStart(2,'0')+':'+(elapsed%60).toString().padStart(2,'0');
@@ -317,7 +319,7 @@ export function VoiceStudio({patientId}:{patientId?:string;demo?:boolean}){
   <audio ref={player} onEnded={()=>{stopPlayback();resetCapture();}} onError={()=>{setError('Your browser could not play the audio response.');resetCapture();}} preload="auto"/>
   {!inCall&&<label className={styles.consent}><input type="checkbox" checked={consent} onChange={e=>setConsent(e.target.checked)}/><span>I agree to temporary microphone processing for this fictional test profile. Transcript retention is controlled separately in Care permissions.</span></label>}
   <div className={styles.controls}>
-   {!inCall?<button className={styles.start} disabled={!consent||stage==='connecting'} onClick={()=>void start()}>☎ Call Smriti</button>:<>
+   {!inCall?<button className={styles.start} disabled={!consent||stage==='connecting'||checking} onClick={()=>void start()}>☎ Call Smriti</button>:<>
     <button className={styles.control} onClick={()=>{mutedRef.current=!mutedRef.current;setMuted(mutedRef.current);if(!mutedRef.current)resetCapture();}}>{muted?'Unmute':'Mute'} microphone</button>
     <button className={styles.control} onClick={()=>{speakerRef.current=!speakerRef.current;setSpeakerOff(speakerRef.current);if(player.current)player.current.muted=speakerRef.current;}}>{speakerOff?'Unmute':'Mute'} speaker</button>
     <button className={styles.control} disabled={stage==='thinking'||stage==='connecting'} onClick={()=>void say('story')}>Tell me a story</button>
