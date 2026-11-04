@@ -91,7 +91,7 @@ export function normalizeCaregiverRelationship(
   'no relation':'no_blood_relation'
  };
  function known(value:string):string|undefined{
-  const key=value.toLocaleLowerCase('en').replace(/[_-]+/g,' ').replace(/\\s+/g,' ').trim();
+  const key=value.toLocaleLowerCase('en').replace(/[_-]+/g,' ').replace(/\s+/g,' ').trim();
   const direct=relationshipOptions.find(([id,label])=>
    id.replace(/_/g,' ')===key||label.toLocaleLowerCase('en')===key);
   return direct?.[0]??map[key];
