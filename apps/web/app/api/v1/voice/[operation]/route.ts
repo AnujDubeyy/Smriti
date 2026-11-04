@@ -5,7 +5,7 @@ import {json,sameOrigin,limitedBody} from '../../../../../lib/auth/http';
 import {providerConfig,respond} from '../../../../../lib/voice/server';
 import {groqTranscribe} from '../../../../../lib/voice/groq';
 import {transcribe,synthesize} from '../../../../../lib/voice/gnani';
-import {asksToStop,itemSchema,type AIInput} from '../../../../../lib/voice/ai';
+import {asksToStop,itemSchema,supportSchema,type AIInput} from '../../../../../lib/voice/ai';
 import {MAX_AUDIO_BYTES,inspectWav} from '../../../../../lib/voice/audio';
 import {VOICE_LANGUAGE_CODES} from '../../../../../lib/voice/languages';
 export const maxDuration=90;
@@ -53,11 +53,16 @@ export async function POST(request:Request,{params}:{params:Promise<{operation:s
   if(claim.duplicate)throw new CareError('duplicate_turn',409);
   await rpc('reserve_response',data);
   try{
-   const context=await rpc('context',{patient_id:state.patient_id});
+   const [context,support]=await Promise.all([
+    rpc('context',{patient_id:state.patient_id}),
+    client.rpc('smriti_conversation_support',{target:state.patient_id})
+   ]);
+   if(support.error)throw support.error;
+   const support_profile=supportSchema.parse(support.data||{});
    const instruction=data.kind==='greeting'
     ?'Please introduce yourself briefly as Smriti in the selected language. Offer one warm greeting and one easy question. Do not claim to be a relative.'
     :'Tell one gentle spoken story in the selected language. Only use a personal memory when it is present in the approved context. Otherwise, clearly make it a fictional story. Do not quiz the listener.';
-   const output=await respond({mode:'companion',locale:state.locale,text:instruction,approved_context:z.array(itemSchema).parse(context.items||[]),logs:[],history:data.history},request.signal);
+   const output=await respond({mode:'companion',locale:state.locale,text:instruction,approved_context:z.array(itemSchema).parse(context.items||[]),logs:[],history:data.history,support_profile},request.signal);
    const config=providerConfig();let audio:Uint8Array|null=null;let audioError:string|null=null;
    if(config.ttsKey)try{audio=await synthesize(output.result.reply,state.locale,config.voice,config.ttsKey,request.signal);}
    catch(e){audioError=e instanceof Error?e.message:'tts_unavailable';}
@@ -90,8 +95,13 @@ export async function POST(request:Request,{params}:{params:Promise<{operation:s
   }
   await rpc('reserve_response',data);
   try{if(asksToStop(data.text)){await rpc('stop',data);return json({result:{reply:'We can stop here.',stop:true,references:[],findings:[],limitations:[]},mode:'deterministic',audio:null});}
-   const context=await rpc('context',{patient_id:state.patient_id});
-   const output=await respond({mode:'companion',locale:state.locale,text:data.text,approved_context:z.array(itemSchema).parse(context.items),logs:[],history:data.history},request.signal);
+   const [context,support]=await Promise.all([
+    rpc('context',{patient_id:state.patient_id}),
+    client.rpc('smriti_conversation_support',{target:state.patient_id})
+   ]);
+   if(support.error)throw support.error;
+   const support_profile=supportSchema.parse(support.data||{});
+   const output=await respond({mode:'companion',locale:state.locale,text:data.text,approved_context:z.array(itemSchema).parse(context.items),logs:[],history:data.history,support_profile},request.signal);
    await rpc('check',data);const c=providerConfig();let audio:Uint8Array|null=null;let audioError:string|null=null;
    if(!output.result.stop&&c.ttsKey)try{audio=await synthesize(output.result.reply,state.locale,c.voice,c.ttsKey,request.signal);}catch(e){audioError=e instanceof Error?e.message:'tts_unavailable';}
    await rpc('check',data);await rpc('finish',{...data,transcript:data.text,result:output.result,metadata:{stt:data.source==='stream'?'prisma-stream':'prisma-rest',tts:audio?'timbre-v3.0':audioError?'failed':'none',llm:output.model,provenance:'browser_transcript_unverified',mode:c.mode}});
