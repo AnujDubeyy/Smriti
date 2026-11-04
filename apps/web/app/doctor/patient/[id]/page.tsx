@@ -16,10 +16,15 @@ export default async function DoctorPatient({params}:{params:Promise<{id:string}
  const {data:patient}=await client.from('patients').select('id,preferred_name,synthetic').eq('id',id).maybeSingle();
  if(!patient||!patient.synthetic)notFound();
  return <section className="doctor-patient">
-  <p><Link href="/doctor">Back to doctor workspace</Link></p>
+  <p><Link href="/doctor">← Back to patients</Link></p>
+  <div className="doctor-workspace-shortcuts">
+   <Link className="button secondary" href={'/doctor/assessments?patient='+id}>Assign assessment</Link>
+   <Link className="button secondary" href={'/doctor/monitoring'}>Monitoring</Link>
+   <Link className="button secondary" href={'/doctor/conversations'}>Conversations</Link>
+  </div>
   <span className="eyebrow">FICTIONAL PATIENT MONITORING</span>
   <h1>{patient.preferred_name}</h1>
   <p className="intro">Authorized observations and conversation logs. AI summaries require clinician review.</p>
-  <LogsPanel patientId={patient.id}/>
+  <LogsPanel patientId={patient.id} readOnly/>
  </section>;
 }
