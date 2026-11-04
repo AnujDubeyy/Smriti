@@ -71,3 +71,36 @@ export const intakeSchema=z.object({
   ctx.addIssue({code:'custom',path:['dementia_stage'],message:'Do not assign a dementia stage to an unconfirmed condition'});
 });
 export type DoctorIntake=z.input<typeof intakeSchema>;
+
+/**
+ * Map previously saved human-readable relationships to stable option IDs.
+ * Keep genuinely custom relationships under Other, without erasing their text.
+ */
+export function normalizeCaregiverRelationship(
+ relationship:unknown,
+ relationshipOther:unknown
+):{relationship:string;relationship_other:string}{
+ const original=typeof relationship==='string'?relationship.trim():'';
+ const detail=typeof relationshipOther==='string'?relationshipOther.trim():'';
+ const map:Record<string,string>={
+  auntie:'aunt',aunty:'aunt',aunt:'aunt',
+  'no blood relation':'no_blood_relation',
+  'no blood relationship':'no_blood_relation',
+  'non blood relation':'no_blood_relation',
+  'not related':'no_blood_relation',
+  'no relation':'no_blood_relation'
+ };
+ function known(value:string):string|undefined{
+  const key=value.toLocaleLowerCase('en').replace(/[_-]+/g,' ').replace(/\\s+/g,' ').trim();
+  const direct=relationshipOptions.find(([id,label])=>
+   id.replace(/_/g,' ')===key||label.toLocaleLowerCase('en')===key);
+  return direct?.[0]??map[key];
+ }
+ const primary=known(original);
+ if(primary&&primary!=='other')return {relationship:primary,relationship_other:''};
+ const legacyDetail=known(detail);
+ if(primary==='other'&&legacyDetail&&legacyDetail!=='other')
+  return {relationship:legacyDetail,relationship_other:''};
+ const freeText=primary==='other'?detail:(detail||original);
+ return {relationship:'other',relationship_other:freeText};
+}
