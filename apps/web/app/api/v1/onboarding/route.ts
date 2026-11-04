@@ -1,26 +1,12 @@
 import {z} from 'zod';
 import {requireCare,CareError,failure} from '../../../../lib/care';
 import {json,sameOrigin,limitedBody} from '../../../../lib/auth/http';
-
-const locale=z.enum(['en-IN','hi-IN','mr-IN']);
-const short=z.string().trim().min(2).max(120);
-const schema=z.discriminatedUnion('role',[
- z.object({
-  role:z.literal('doctor'),doctor_name:short,
-  organization:z.string().trim().max(160).default(''),
-  specialty:z.string().trim().max(100).default(''),locale
- }).strict(),
- z.object({
-  role:z.literal('caregiver'),caregiver_name:short,
-  patient_name:short,date_of_birth:z.iso.date(),
-  sex:z.enum(['female','male','intersex','prefer_not_to_say']),
-  family_count:z.coerce.number().int().min(0).max(50),
-  relationship:z.string().trim().min(2).max(100),
-  support_notes:z.string().trim().max(2000).default(''),
-  locale,authorized:z.literal(true),
-  audio_capture:z.boolean(),transcript_retention:z.boolean(),personalization:z.boolean()
- }).strict()
-]);
+const schema=z.object({
+ role:z.literal('doctor'),doctor_name:z.string().trim().min(2).max(120),
+ organization:z.string().trim().max(160).default(''),
+ specialty:z.string().trim().max(100).default(''),
+ locale:z.enum(['en-IN','hi-IN','mr-IN'])
+}).strict();
 export async function POST(request:Request){
  try{
   if(!sameOrigin(request))throw new CareError('forbidden',403);
@@ -28,30 +14,19 @@ export async function POST(request:Request){
   const raw=await limitedBody(request,12000);
   if(raw===null)throw new CareError('payload_too_large',413);
   const data=schema.parse(JSON.parse(raw));
-  if(data.role==='caregiver')throw new CareError('qr_required',403);
   const {data:{user},error:authError}=await client.auth.getUser();
-  if(authError||!user)throw new CareError('unauthorized',401);
+  if(authError||!user||user.is_anonymous)throw new CareError('unauthorized',401);
   const {data:profile,error:profileError}=await client.from('app_users')
-   .select('onboarding_role,clinician_verification_status').eq('id',user.id).single();
+   .select('onboarding_role').eq('id',user.id).single();
   if(profileError)throw profileError;
-  // Changing a verified doctor's role does not revoke actual clinical privileges.
-  // Never use onboarding_role to authorize access to records.
-  if(profile.onboarding_role && profile.onboarding_role!==data.role)
+  if(profile.onboarding_role&&profile.onboarding_role!=='doctor')
    throw new CareError('role_already_selected',409);
-
-  const preferences=data.role==='doctor'
-   ? {onboarding_role:'doctor',display_name:data.doctor_name,preferred_locale:data.locale,
-      professional_profile:{organization:data.organization,specialty:data.specialty}}
-   : {onboarding_role:'caregiver',display_name:data.caregiver_name,preferred_locale:data.locale};
-
-  const {error:updateError}=await client.from('app_users').update(preferences).eq('id',user.id);
+  const {error:updateError}=await client.from('app_users')
+   .update({onboarding_role:'doctor',display_name:data.doctor_name,
+    preferred_locale:data.locale,professional_profile:{
+     organization:data.organization,specialty:data.specialty}})
+   .eq('id',user.id);
   if(updateError)throw updateError;
-
-  if(data.role==='doctor')return json({ok:true,next:'/doctor'});
-
-  const {role,...patientInput}=data;
-  const {data:result,error}=await client.rpc('smriti_setup',{input:patientInput});
-  if(error)throw error;
-  return json({ok:true,patient_id:result.patient_id,next:'/'});
+  return json({ok:true,next:'/doctor'});
  }catch(error){return failure(error);}
 }
