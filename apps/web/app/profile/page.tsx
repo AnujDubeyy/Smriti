@@ -2,7 +2,7 @@ import Link from 'next/link';
 import {redirect} from 'next/navigation';
 import {requireAccount} from '../../lib/page-access';
 import {ProfileEditor} from '../../components/profile-editor';
-import {relationshipOptions} from '../../lib/clinical-intake';
+import {normalizeCaregiverRelationship} from '../../lib/clinical-intake';
 export const dynamic='force-dynamic';
 export default async function Profile(){
  const client=await requireAccount();
@@ -21,12 +21,13 @@ export default async function Profile(){
   .order('created_at').limit(1).maybeSingle();
  if(patientError||!patient)return <section><h1>No connected profile</h1><p>Ask your doctor to share a caretaker QR invitation.</p></section>;
  const d=(patient.care_details||{}) as Record<string,unknown>;
+ const normalized=normalizeCaregiverRelationship(d.relationship,d.relationship_other);
  return <ProfileEditor role="caregiver" patientId={patient.id} email={user!.email}
   isAnonymous={!!user!.is_anonymous}
   initial={{
    patient_name:patient.preferred_name,caretaker_name:String(d.caregiver_name||account.display_name||''),
-   relationship:relationshipOptions.some(([id])=>id===d.relationship)?String(d.relationship):'other',
-   relationship_other:String(d.relationship_other||(relationshipOptions.some(([id])=>id===d.relationship)?'':d.relationship||'')),
+   relationship:normalized.relationship,
+   relationship_other:normalized.relationship_other,
    date_of_birth:String(d.date_of_birth||''),
    sex:String(d.sex||'prefer_not_to_say'),family_count:Number(d.family_count||0),
    support_notes:String(d.support_notes||'')
