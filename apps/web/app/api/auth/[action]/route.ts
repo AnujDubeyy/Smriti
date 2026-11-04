@@ -52,7 +52,7 @@ export async function POST(request: Request, {params}: {params: Promise<{action:
   if(code==='user_already_exists')return json({error:'sign_up_failed'},400);
   // Useful metadata only: no email, password or provider response bodies in logs.
   console.error('Smriti signup provider failed',{status:error.status,code:code||'unknown'});
-  return json({error:'sign_up_failed'},error.status>=500?503:400);
+  return json({error:'sign_up_failed'},(error.status??400)>=500?503:400);
  }
  return json({ok:true,confirmationRequired:!data.session});
 }
