@@ -89,8 +89,6 @@ test('doctor QR is single-use and does not bypass caretaker consent',async()=>{
   await db.query("insert into auth.users(id,email,email_confirmed_at,is_anonymous) values($1,$2,now(),false),($3,null,null,true)",
    [doctor,'doctor-qr@example.invalid',caretaker]);
   await db.query("update public.app_users set onboarding_role='doctor' where id=$1",[doctor]);
-  await assert.rejects(db.query('select public.smriti_claim_caretaker_qr($1::jsonb)',[JSON.stringify({token_hash:hash,authorized:true})]),
-   /qr_expired_or_used/);
   await db.query("select set_config('request.jwt.claim.sub',$1,true)",[doctor]);
   await db.exec('set local role authenticated');
   const hash='a'.repeat(64);
@@ -112,6 +110,8 @@ test('doctor QR is single-use and does not bypass caretaker consent',async()=>{
   assert.equal(claimed.rows[0].result.patient_id,pid);
   assert.equal((await db.query('select public.smriti_qr_session_ok() as allowed')).rows[0].allowed,true);
   assert.equal((await db.query('select smriti_private.has_scope($1,$2) as allowed',[pid,'records:read'])).rows[0].allowed,true);
+  await assert.rejects(db.query('select public.smriti_claim_caretaker_qr($1::jsonb)',[JSON.stringify({token_hash:hash,authorized:true})]),
+   /qr_expired_or_used/);
   const beforeSupport=await db.query('select public.smriti_conversation_support($1) as support',[pid]);
   assert.deepEqual(beforeSupport.rows[0].support,{},'without personalization consent no clinical profile leaves Supabase');
   await db.query('select smriti_private.command($1,$2::jsonb)',[
