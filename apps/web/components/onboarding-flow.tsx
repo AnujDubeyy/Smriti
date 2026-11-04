@@ -6,7 +6,7 @@ import styles from './onboarding-flow.module.css';
 
 type Role='doctor'|'caregiver';
 const languages=[['en-IN','English'],['hi-IN','हिन्दी'],['mr-IN','मराठी']] as const;
-type Intake={caregiver_name:string;relationship:string;patient_name:string;date_of_birth:string;sex:string;family_count:string;support_notes:string;locale:string;audio_capture:boolean;transcript_retention:boolean;personalization:boolean;};
+type Intake={caregiver_name:string;relationship:string;patient_name:string;date_of_birth:string;sex:string;family_count:string;support_notes:string;locale:string;audio_capture:boolean;transcript_retention:boolean;personalization:boolean;authorized:boolean;};
 type Doctor={doctor_name:string;registration_number:string;organization:string;specialty:string;locale:string};
 const readable:Record<string,string>={
  invalid_request:'Check the details and try again.',
