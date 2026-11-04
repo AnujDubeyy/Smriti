@@ -1,6 +1,6 @@
 import {test} from 'node:test';
 import assert from 'node:assert/strict';
-import {intakeSchema,relationshipOptions,diagnosisOptions,dementiaDiagnoses} from '../lib/clinical-intake.ts';
+import {intakeSchema,relationshipOptions,diagnosisOptions,dementiaDiagnoses,normalizeCaregiverRelationship} from '../lib/clinical-intake.ts';
 const base={
  caretaker_name:'Fictional Relative',patient_name:'Fictional Patient',
  relationship:'daughter',relationship_other:'',date_of_birth:'1950-01-01',
@@ -41,4 +41,22 @@ test('bad inputs, unverifiable severity and invented diagnosis codes are rejecte
  assert.equal(intakeSchema.safeParse({...base,blood_group:'X+'}).success,false);
  assert.equal(intakeSchema.safeParse({...base,diagnoses:['made_up_condition']}).success,false);
  assert.equal(intakeSchema.safeParse({...base,communication_support:['unknown_need']}).success,false);
+});
+
+test('previously stored display values map to the relationship dropdown',()=>{
+ assert.deepEqual(normalizeCaregiverRelationship('Son',''),{relationship:'son',relationship_other:''});
+ assert.deepEqual(normalizeCaregiverRelationship('  Daughter  ','stale'),{relationship:'daughter',relationship_other:''});
+ assert.deepEqual(normalizeCaregiverRelationship('No blood relation',''),{relationship:'no_blood_relation',relationship_other:''});
+ assert.deepEqual(normalizeCaregiverRelationship('aunty',''),{relationship:'aunt',relationship_other:''});
+});
+test('legacy Other with a recognized relationship value chooses the standard dropdown option',()=>{
+ assert.deepEqual(normalizeCaregiverRelationship('other','Son'),{relationship:'son',relationship_other:''});
+});
+test('custom caretakers retain original information instead of being silently replaced',()=>{
+ assert.deepEqual(normalizeCaregiverRelationship('Family friend',''),{relationship:'other',relationship_other:'Family friend'});
+ assert.deepEqual(normalizeCaregiverRelationship('Other','Family friend'),{relationship:'other',relationship_other:'Family friend'});
+});
+test('saving a normalized relation meets the caregiver intake validator',()=>{
+ const normalized=normalizeCaregiverRelationship('Son','');
+ assert.equal(intakeSchema.safeParse({...base,...normalized}).success,true);
 });
