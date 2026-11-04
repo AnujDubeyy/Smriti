@@ -39,7 +39,7 @@ export async function POST(request:Request,{params}:{params:Promise<{operation:s
   try{
    const bytes=await synthesize('Hello, I am Smriti.',test.locale,config.voice,config.speech,request.signal);
    timbre={ok:true};sample=Buffer.from(bytes).toString('base64');
-  }catch(e){timbre={ok:false,code:e instanceof Error?e.message:'tts_unavailable'};}
+  }catch(e){timbre={ok:false,code:safeError(e,'tts_unavailable')};}
   return json({gemini,timbre,sample,model:config.model});
  }
  if(operation==='start'){
