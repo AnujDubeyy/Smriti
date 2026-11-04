@@ -136,11 +136,12 @@ test('doctor QR is single-use and does not bypass caretaker consent',async()=>{
    }
   };
   await db.query('select public.smriti_update_doctor_intake($1::jsonb)',[JSON.stringify(revised)]);
-  const afterDoctor=await db.query('select care_details from public.patients where id=$1',[pid]);
-  assert.equal(afterDoctor.rows[0].care_details.clinical_intake.blood_group,'B+');
-  assert.equal(afterDoctor.rows[0].care_details.clinical_intake.diagnoses[0],'mci');
-  assert.equal(afterDoctor.rows[0].care_details.relationship,'son',
-   'clinician intake update should not overwrite caretaker details');
+  const afterDoctor=await db.query('select public.smriti_doctor_qr_roster() as items');
+  const authorIntake=afterDoctor.rows[0].items.find(x=>x.patient_id===pid).clinical_intake;
+  assert.equal(authorIntake.blood_group,'B+');
+  assert.equal(authorIntake.diagnoses[0],'mci');
+  // The doctor's scoped roster does not expose the caretaker's private notes.
+  assert.ok(!Object.hasOwn(afterDoctor.rows[0].items[0],'care_details'));
   assert.equal((await db.query('select smriti_private.has_scope($1,$2) as allowed',[pid,'records:read'])).rows[0].allowed,false,
    'updating a doctor-authored intake must not bypass caretaker clinician-sharing consent');
 
