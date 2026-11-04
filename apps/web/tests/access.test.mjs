@@ -80,3 +80,35 @@ test('caregiver setup saves fictional details, consent and a real voice session 
 test('setup requires explicit authority and cannot promote clinician privileges',()=>asUser(1,async()=>{await assert.rejects(setup({...details,authorized:false}),/invalid_request/);}));
 test('setup with microphone disabled cannot start a call',()=>asUser(1,async()=>{const {patient_id:p}=await setup({...details,audio_capture:false});await assert.rejects(voice('start',{patient_id:p,locale:'hi-IN'}),/consent_required/);}));
 test('editing details preserves retained transcripts and active calls when consent is unchanged',()=>asUser(1,async()=>{const {patient_id:p}=await setup(details);const s=await voice('start',{patient_id:p,locale:'hi-IN'});const i={session_id:s.id,turn_id:uid(304),hash:'a'.repeat(64)};await voice('claim',i);await voice('reserve_response',i);await voice('finish',{...i,transcript:'Keep this conversation',result:{reply:'Hello'},metadata:{}});await setup({...details,patient_name:'Updated name'});assert.equal((await query('select transcript from voice_turns where id=$1',[uid(304)])).rows[0].transcript,'Keep this conversation');assert.equal((await voice('check',{session_id:s.id})).patient_id,p);}));
+
+
+test('doctor QR is single-use and does not bypass caretaker consent',async()=>{
+ await db.exec('begin');
+ try{
+  const doctor=uid(8),caretaker=uid(7);
+  await db.query("insert into auth.users(id,email,email_confirmed_at,is_anonymous) values($1,$2,now(),false),($3,null,null,true)",
+   [doctor,'doctor-qr@example.invalid',caretaker]);
+  await db.query("update public.app_users set onboarding_role='doctor' where id=$1",[doctor]);
+  await db.query("select set_config('request.jwt.claim.sub',$1,true)",[doctor]);
+  await db.exec('set local role authenticated');
+  const hash='a'.repeat(64);
+  const intake={
+   token_hash:hash,patient_name:'Fictional Patient',caretaker_name:'Fictional Caretaker',
+   relationship:'Child',date_of_birth:'1950-01-01',sex:'prefer_not_to_say',
+   family_count:3,locale:'hi-IN',support_notes:''
+  };
+  const created=await db.query('select public.smriti_issue_doctor_qr($1::jsonb) as result',[JSON.stringify(intake)]);
+  const pid=created.rows[0].result.patient_id;
+  assert.ok(pid);
+  assert.equal((await db.query('select smriti_private.has_scope($1, $2) as allowed',[pid,'records:read'])).rows[0].allowed,false,
+   'doctor should not read patient records before caretaker sharing consent');
+  await db.query("select set_config('request.jwt.claim.sub',$1,true)",[caretaker]);
+  assert.equal((await db.query('select public.smriti_qr_session_ok() as allowed')).rows[0].allowed,false);
+  const claimed=await db.query('select public.smriti_claim_caretaker_qr($1::jsonb) as result',[JSON.stringify({token_hash:hash,authorized:true})]);
+  assert.equal(claimed.rows[0].result.patient_id,pid);
+  assert.equal((await db.query('select public.smriti_qr_session_ok() as allowed')).rows[0].allowed,true);
+  assert.equal((await db.query('select smriti_private.has_scope($1,$2) as allowed',[pid,'records:read'])).rows[0].allowed,true);
+  await assert.rejects(db.query('select public.smriti_claim_caretaker_qr($1::jsonb)',[JSON.stringify({token_hash:hash,authorized:true})]),
+   /qr_expired_or_used/);
+ }finally{await db.exec('rollback');}
+});
