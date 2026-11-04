@@ -2,7 +2,8 @@
 import {useState} from 'react';
 import Link from 'next/link';
 import styles from './profile-editor.module.css';
-type Details={patient_name:string;caretaker_name:string;relationship:string;date_of_birth:string;sex:string;family_count:number;support_notes:string};
+import {relationshipOptions} from '../lib/clinical-intake';
+type Details={patient_name:string;caretaker_name:string;relationship:string;relationship_other:string;date_of_birth:string;sex:string;family_count:number;support_notes:string};
 export function ProfileEditor({patientId,initial,email,isAnonymous,role}:{
  patientId?:string;initial?:Details;email?:string;isAnonymous:boolean;role:'doctor'|'caregiver'
 }){
@@ -54,7 +55,16 @@ export function ProfileEditor({patientId,initial,email,isAnonymous,role}:{
    <p>Patient details can be updated here. Personal stories and daily observations are managed in their own sections.</p>
    <form onSubmit={updateDetails} className={styles.form}>
     <label>Caretaker name<input required value={details.caretaker_name} onChange={e=>set('caretaker_name',e.target.value)}/></label>
-    <label>Relationship<input required value={details.relationship} onChange={e=>set('relationship',e.target.value)}/></label>
+    <div>
+     <span className={styles.fieldLabel}>Relationship to patient</span>
+     <div className={styles.relationshipScroller} role="group" aria-label="Relationship to patient">
+      {relationshipOptions.map(([id,label])=><button type="button" key={id}
+       className={details.relationship===id?styles.selectedPill:styles.pill}
+       aria-pressed={details.relationship===id} onClick={()=>set('relationship',id)}>{label}</button>)}
+     </div>
+     {details.relationship==='other'?<label>Specify relationship<input required maxLength={100}
+      value={details.relationship_other} onChange={e=>set('relationship_other',e.target.value)}/></label>:null}
+    </div>
     <label>Patient name<input required value={details.patient_name} onChange={e=>set('patient_name',e.target.value)}/></label>
     <div className={styles.two}>
      <label>Date of birth<input required type="date" value={details.date_of_birth} onChange={e=>set('date_of_birth',e.target.value)}/></label>
