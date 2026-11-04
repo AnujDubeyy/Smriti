@@ -4,7 +4,16 @@ export const itemSchema=z.object({id:z.string().uuid(),text:z.string().max(2000)
 export type Evidence=z.infer<typeof itemSchema>;
 export const resultSchema=z.object({reply:z.string().min(1).max(1200),references:z.array(z.string().uuid()).max(20),stop:z.boolean(),findings:z.array(z.object({text:z.string().max(500),source_ids:z.array(z.string().uuid()).min(1).max(5),quotes:z.array(z.object({source_id:z.string().uuid(),text:z.string().min(1).max(500)})).min(1).max(5)}).strict()).max(10),limitations:z.array(z.string().max(300)).max(6)}).strict();
 export type AIResult=z.infer<typeof resultSchema>;
-export type AIInput={mode:'companion'|'log_analysis';locale:string;text:string;approved_context:Evidence[];logs:Evidence[];history:{speaker:'user'|'assistant';text:string}[]};
+// Only caretaker-consented communication guidance. Never include blood group or medication.
+export const supportSchema=z.object({
+ relationship:z.string().max(100).optional(),
+ diagnoses:z.array(z.string().max(64)).max(5).optional(),
+ diagnosis_status:z.string().max(40).optional(),
+ dementia_stage:z.string().max(40).optional(),
+ daily_support:z.string().max(40).optional(),
+ communication_support:z.array(z.string().max(64)).max(6).optional()
+}).strict();
+export type AIInput={mode:'companion'|'log_analysis';locale:string;text:string;approved_context:Evidence[];logs:Evidence[];history:{speaker:'user'|'assistant';text:string}[];support_profile?:z.infer<typeof supportSchema>};
 export function asksToStop(text:string){return /\b(stop|pause|end conversation|don't want to talk|do not want to talk)\b|रुको|रुकिए|बंद करो|थांब|थांबा/iu.test(text);}
 export function validateEvidence(value:unknown,input:AIInput){
  const r=resultSchema.parse(value);const items=input.mode==='log_analysis'?input.logs:input.approved_context;const map=new Map(items.map(x=>[x.id,x.text]));
