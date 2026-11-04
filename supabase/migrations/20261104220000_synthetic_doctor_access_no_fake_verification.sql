@@ -23,7 +23,7 @@ AS $function$
    and (required_scope not in ('clinical_notes:read','clinical_notes:write','care_plan:write','assessment:finalize')
         or (m.role='clinician' and (u.clinician_verification_status='verified' or (u.onboarding_role='doctor' and exists (select 1 from public.patients pat where pat.id=target and pat.synthetic=true)))))
  );
-$function$
+$function$;
 
 CREATE OR REPLACE FUNCTION smriti_private.command(operation text, input jsonb)
  RETURNS jsonb
@@ -111,7 +111,7 @@ begin
   return '{"ok":true}';
  end if;
  raise exception 'invalid_operation';
-end;$function$
+end;$function$;
 
 revoke all on function smriti_private.has_scope(uuid,text) from public,anon;
 revoke all on function smriti_private.command(text,jsonb) from public,anon;
