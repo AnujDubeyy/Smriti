@@ -1,2 +1,2 @@
-import {VoiceStudio} from '../../components/voice-call';
-export default function Page(){return <VoiceStudio/>;}
+import {redirect} from 'next/navigation';
+export default function Page(){redirect('/companionship');}
