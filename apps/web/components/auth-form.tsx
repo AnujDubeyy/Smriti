@@ -57,6 +57,6 @@ export function AuthForm({mode,configured}:{mode:'login'|'signup';configured:boo
    {mode==='login'?<><span>New to Smriti? <Link href="/signup">Create an account</Link></span><Link href="/recover">Forgot password?</Link></>
    :<span>Already have an account? <Link href="/login">Sign in</Link></span>}
   </div>
-  <p className="smriti-auth-footnote">After signing in, choose <strong>Doctor</strong> or <strong>Patient & Caregiver</strong>. Clinical access requires independent approval.</p>
+  <p className="smriti-auth-footnote">After signing in, choose <strong>Doctor</strong> or <strong>Patient & Caregiver</strong>. Patient information is shared only through authorized care connections.</p>
  </section>;
 }
