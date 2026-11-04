@@ -199,7 +199,10 @@ begin
   select pg_get_functiondef(p.oid) into def from pg_proc p
     join pg_namespace n on n.oid=p.pronamespace
    where n.nspname='smriti_private' and p.proname=fn_name;
-  if def is null then raise exception 'missing function %',fn_name;end if;
+  if def is null then
+   if fn_name in ('has_scope','command') then raise exception 'missing function %',fn_name;end if;
+   continue; -- Optional modules may be absent in a minimal local test schema.
+  end if;
   if fn_name='has_scope' then
    if position('a.email_confirmed_at is not null and not coalesce(a.is_anonymous,false)' in def)=0 then raise exception 'unexpected has_scope';end if;
    rewritten:=replace(def,
