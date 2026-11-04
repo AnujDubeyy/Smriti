@@ -1,0 +1,28 @@
+.root{max-width:920px;margin:0 auto 36px;min-width:0}
+.head h1{max-width:none;margin:8px 0 10px;font-size:clamp(28px,3vw,38px)}
+.head p{font-size:15px;line-height:1.6;color:#625d55}
+.eyebrow{font-weight:900;letter-spacing:.12em;font-size:12px;color:#88681b}
+.card{border:1px solid #e4ded3;background:#fff;border-radius:18px;padding:clamp(17px,3vw,25px);margin-top:22px}
+.card h2{font-size:20px}.card p{font-size:14px;color:#635b53;line-height:1.6;margin-top:12px}
+.label{display:grid;gap:9px;font-size:14px;font-weight:850;max-width:100%;margin:12px 0}
+.label select,.label input{display:block;width:100%;max-width:100%;min-width:0;box-sizing:border-box;padding:11px 13px;background:#fff;min-height:49px;border:1px solid #a8a095;border-radius:11px;font-size:15px}
+.optional{font-size:12px;color:#696159;font-weight:550}
+.status{font-weight:750;color:#544d42!important}
+.warning{padding:12px;background:#fff7df;border-radius:12px;color:#5d481c!important}
+.subheading{margin:27px 0 15px;font-size:23px}
+.catalog{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,250px),1fr));gap:14px}
+.activity{display:flex;flex-direction:column;gap:10px;border:1px solid #e7dfd2;border-radius:17px;background:white;padding:20px;min-width:0}
+.activityTop{display:flex;align-items:start;justify-content:space-between;gap:10px}
+.activityTop strong{font-size:17px;line-height:1.35}
+.activityTop span{flex:none;background:#faf4e2;border-radius:20px;padding:4px 8px;font-size:12px}
+.activity p{font-size:13px;line-height:1.6;color:#655e55;flex:1}
+.activity button{width:100%;min-height:48px;border:1px solid #b89119;border-radius:11px;background:#ffca28;font-weight:850;padding:10px}
+.activity button:disabled{background:#f0ede6;color:#6d6b67;border-color:#e5e1d8}
+.assigned{list-style:none;padding:0;display:grid;gap:12px;margin:16px 0 0}
+.assigned li{display:flex;align-items:center;flex-wrap:wrap;gap:7px 14px;border-bottom:1px solid #eee8dd;padding:10px 0;font-size:13px}
+.assigned li strong{flex:1;min-width:160px;font-size:14px}
+.assigned li span{color:#6e561d;font-weight:850}
+.assigned li small{color:#6f685e}
+.success,.error{margin-top:15px;padding:13px;border-radius:10px;font-size:14px}
+.success{background:#edf6eb;color:#33532b}.error{background:#fff1ef;color:#922923}
+.back,.link{display:inline-block;margin-top:24px;font-weight:800;font-size:14px;color:#63521d}
