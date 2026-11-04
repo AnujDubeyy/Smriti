@@ -85,7 +85,10 @@ test('a timeout on one model falls back to the next',async()=>{
  const result=await runModelChain(chain,new AbortController().signal,async(_candidate,signal)=>{
   calls++;
   if(calls===1)await new Promise((_,reject)=>{
-   signal.addEventListener('abort',()=>reject(new Error('call_cancelled')),{once:true});
+   // Keep the Node test event loop alive until AbortSignal.timeout fires;
+   // AbortSignal's internal timer is intentionally unref'd.
+   const watchdog=setTimeout(()=>reject(new Error('test_watchdog')),350);
+   signal.addEventListener('abort',()=>{clearTimeout(watchdog);reject(new Error('call_cancelled'));},{once:true});
   });
   return 'recovered';
  },undefined,110);
