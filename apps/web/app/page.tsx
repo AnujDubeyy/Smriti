@@ -32,7 +32,7 @@ export default async function Home(){
    </Link>
   </div>
   <div className="care-home-links">
-   <Link href="/onboarding">Edit patient details</Link>
+   <Link href="/profile">Edit patient details & login</Link>
    <Link href={'/permissions?patient='+patient.id}>Care permissions</Link>
    <Link href="/accept-invite">Accept an invitation</Link>
   </div>
