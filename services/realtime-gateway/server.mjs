@@ -6,9 +6,10 @@ const PORT=Number(process.env.PORT||8080);
 const KEY=process.env.GNANI_API_KEY_ID||process.env.GNANI_API_KEY;
 const SECRET=process.env.SMRITI_GATEWAY_SECRET;
 const ORIGINS=(process.env.SMRITI_ALLOWED_ORIGIN||"").split(",").map(x=>x.trim()).filter(Boolean);
-if(!KEY||!SECRET||SECRET.length<32||!ORIGINS.length)throw Error("Set GNANI_API_KEY_ID, SMRITI_GATEWAY_SECRET (32+ characters) and SMRITI_ALLOWED_ORIGIN");
+const READY=Boolean(KEY&&SECRET&&SECRET.length>=32&&ORIGINS.length);
 const LANG=new Set(["en-IN","hi-IN","mr-IN","bn-IN","gu-IN","pa-IN","kn-IN","te-IN","ta-IN","ml-IN"]);
 function verify(token){
+ if(!READY)return null;
  if(!token||token.length>2048)return null;
  const [body,mac,extra]=token.split(".");if(!body||!mac||extra)return null;
  const expected=createHmac("sha256",SECRET).update(body).digest();
@@ -24,12 +25,13 @@ function verify(token){
 const httpServer=http.createServer((req,res)=>{
  if(req.method==="GET"&&req.url==="/health"){
   res.writeHead(200,{"Content-Type":"application/json","Cache-Control":"no-store"});
-  res.end(JSON.stringify({ok:true,service:"smriti-gnani-stream"}));return;
+  res.end(JSON.stringify({ok:true,ready:READY,service:"smriti-gnani-stream"}));return;
  }
  res.writeHead(404).end();
 });
 const wss=new WebSocketServer({noServer:true,maxPayload:4096,handleProtocols:p=>p.has("smriti.v1")?"smriti.v1":false});
 httpServer.on("upgrade",(req,socket,head)=>{
+ if(!READY){socket.write("HTTP/1.1 503 Service Unavailable\r\n\r\n");socket.destroy();return;}
  if(!ORIGINS.includes(req.headers.origin||"")){socket.write("HTTP/1.1 403 Forbidden\r\n\r\n");socket.destroy();return;}
  const pathname=new URL(req.url||"/", "http://localhost").pathname;
  if(pathname!=="/ws"){socket.destroy();return;}
