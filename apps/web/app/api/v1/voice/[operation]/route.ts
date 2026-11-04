@@ -35,7 +35,7 @@ export async function POST(request:Request,{params}:{params:Promise<{operation:s
   try{
    await respond({mode:'companion',locale:test.locale,text:'Please say a short warm greeting to a fictional listener. Do not mention family members or medical information.',approved_context:[],logs:[],history:[]},request.signal);
    gemini={ok:true};
-  }catch(e){gemini={ok:false,code:e instanceof Error?e.message:'ai_unavailable'};}
+  }catch(e){gemini={ok:false,code:safeError(e,'ai_unavailable')};}
   try{
    const bytes=await synthesize('Hello, I am Smriti.',test.locale,config.voice,config.speech,request.signal);
    timbre={ok:true};sample=Buffer.from(bytes).toString('base64');
