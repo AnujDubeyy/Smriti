@@ -109,6 +109,7 @@ export function OnboardingFlow({initialRole=null,initialName='',initialPatient={
     <label>Daily support needs (optional)<textarea value={intake.support_notes} maxLength={2000} onChange={e=>edit('support_notes',e.target.value)} placeholder="You can add details later."/></label>
    </div>:<div className={styles.checks}>
     <p><strong>Prototype testing:</strong> Create a fictional patient profile. Do not enter real identifiable medical information until clinical/privacy validation is complete.</p>
+    <label><input type="checkbox" checked={intake.authorized} required onChange={e=>edit('authorized',e.target.checked)}/><span><b>I am authorized to manage this fictional care profile</b><small>Only make consent decisions for yourself or a person you have authority to represent.</small></span></label>
     <label><input type="checkbox" checked={intake.audio_capture} onChange={e=>edit('audio_capture',e.target.checked)}/><span><b>Enable voice conversations</b><small>Allow temporary microphone processing. Raw audio is not retained.</small></span></label>
     <label><input type="checkbox" checked={intake.transcript_retention} onChange={e=>edit('transcript_retention',e.target.checked)}/><span><b>Keep conversation text</b><small>Save text transcripts for permitted care review.</small></span></label>
     <label><input type="checkbox" checked={intake.personalization} onChange={e=>edit('personalization',e.target.checked)}/><span><b>Use approved memories</b><small>Personal stories will require a separate approval before Smriti uses them.</small></span></label>
