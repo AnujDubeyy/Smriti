@@ -24,6 +24,23 @@ export async function POST(request:Request,{params}:{params:Promise<{operation:s
   catch(e){await rpc('fail',ids).catch(()=>{});throw e;}
  }
  const raw=await limitedBody(request,18000);if(raw===null)throw new CareError('payload_too_large',413);const input=JSON.parse(raw);
+ if(operation==='diagnostics'){
+  const test=z.object({locale:z.enum(VOICE_LANGUAGE_CODES)}).strict().parse(input);
+  const config=providerConfig();if(config.mode!=='live')throw new CareError('voice_not_configured',503);
+  // Quota guard: never expose unauthenticated or unlimited provider tests.
+  const q=await client.rpc('smriti_ai_quota');if(q.error)throw q.error;
+  let gemini:{ok:boolean;code?:string}={ok:false},timbre:{ok:boolean;code?:string}={ok:false};
+  let sample:string|null=null;
+  try{
+   await respond({mode:'companion',locale:test.locale,text:'Please say a short warm greeting to a fictional listener. Do not mention family members or medical information.',approved_context:[],logs:[],history:[]},request.signal);
+   gemini={ok:true};
+  }catch(e){gemini={ok:false,code:e instanceof Error?e.message:'ai_unavailable'};}
+  try{
+   const bytes=await synthesize('Hello, I am Smriti.',test.locale,config.voice,config.speech,request.signal);
+   timbre={ok:true};sample=Buffer.from(bytes).toString('base64');
+  }catch(e){timbre={ok:false,code:e instanceof Error?e.message:'tts_unavailable'};}
+  return json({gemini,timbre,sample,model:config.model});
+ }
  if(operation==='start'){
   const config=providerConfig();
   return json({...await rpc('start',start.parse(input)),mode:config.mode});
