@@ -49,7 +49,7 @@ export function AuthForm({mode,configured}:{mode:'login'|'signup';configured:boo
    <span className="smriti-auth-kicker">SMRITI</span>
    <h1>{mode==='login'?'Welcome back':'Create your account'}</h1>
    <p>{mode==='login'?'Sign in to continue to your care workspace.'
-    :'One account for either Doctor or Patient & Caregiver. You will choose your role and complete setup after signing in.'}</p>
+    :'Create a doctor account. Add caretakers and patients from your workspace using one-time QR invitations.'}</p>
   </div>
   {confirmation?<div className="smriti-auth-confirmation" role="status">
    <h2>Check your email</h2><p>We sent a confirmation link to your address. Open it, then sign in to finish your Smriti setup.</p>
@@ -66,6 +66,6 @@ export function AuthForm({mode,configured}:{mode:'login'|'signup';configured:boo
    {mode==='login'?<><span>New to Smriti? <Link href="/signup">Create an account</Link></span><Link href="/recover">Forgot password?</Link></>
    :<span>Already have an account? <Link href="/login">Sign in</Link></span>}
   </div>
-  <p className="smriti-auth-footnote">After signing in, choose <strong>Doctor</strong> or <strong>Patient & Caregiver</strong>. Patient information is shared only through authorized care connections.</p>
+  <p className="smriti-auth-footnote">Doctors create the initial fictional patient profile. Caretakers join through a private QR link, then manage their connected profile.</p>
  </section>;
 }
