@@ -112,7 +112,9 @@ test('doctor QR is single-use and does not bypass caretaker consent',async()=>{
   assert.equal((await db.query('select smriti_private.has_scope($1,$2) as allowed',[pid,'records:read'])).rows[0].allowed,true);
   const beforeSupport=await db.query('select public.smriti_conversation_support($1) as support',[pid]);
   assert.deepEqual(beforeSupport.rows[0].support,{},'without personalization consent no clinical profile leaves Supabase');
-  await db.query("insert into public.consent_grants(patient_id,purpose,actor_id,authorization_basis) values($1,'personalization',$2,'prototype_qr_claim')",[pid,caretaker]);
+  await db.query('select smriti_private.command($1,$2::jsonb)',[
+   'consent',JSON.stringify({patient_id:pid,purpose:'personalization',enabled:true})
+  ]);
   const withSupport=await db.query('select public.smriti_conversation_support($1) as support',[pid]);
   assert.equal(withSupport.rows[0].support.relationship,'daughter');
   assert.equal(withSupport.rows[0].support.dementia_stage,'mild');
