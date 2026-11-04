@@ -47,7 +47,7 @@ export function OnboardingFlow({initialRole=null,initialName='',initialPatient={
   if(!role||busy)return;
   setBusy(true);setError('');
   try{
-   const payload=role==='doctor'?{role,...doctor}:{role,...intake,family_count:Number(intake.family_count),authorized:true};
+   const payload=role==='doctor'?{role,...doctor}:{role,...intake,family_count:Number(intake.family_count)};
    const response=await fetch('/api/v1/onboarding',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload),cache:'no-store'});
    const data=await response.json().catch(()=>({error:'temporarily_unavailable'}));
    if(!response.ok)throw new Error(data.error||'temporarily_unavailable');
