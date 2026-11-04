@@ -1,6 +1,6 @@
 import {z} from 'zod';
-import {requireCare,CareError,failure} from '../../../../lib/care';
-import {json,sameOrigin,limitedBody} from '../../../../lib/auth/http';
+import {requireCare,CareError,failure} from '../../../../../lib/care';
+import {json,sameOrigin,limitedBody} from '../../../../../lib/auth/http';
 export const dynamic='force-dynamic';
 const schema=z.object({
  patient_id:z.uuid(),assignment_id:z.uuid(),
