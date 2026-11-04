@@ -28,6 +28,7 @@ export async function POST(request:Request){
   const raw=await limitedBody(request,12000);
   if(raw===null)throw new CareError('payload_too_large',413);
   const data=schema.parse(JSON.parse(raw));
+  if(data.role==='caregiver')throw new CareError('qr_required',403);
   const {data:{user},error:authError}=await client.auth.getUser();
   if(authError||!user)throw new CareError('unauthorized',401);
   const {data:profile,error:profileError}=await client.from('app_users')
