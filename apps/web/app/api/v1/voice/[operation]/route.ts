@@ -29,6 +29,7 @@ export async function POST(request:Request,{params}:{params:Promise<{operation:s
   const config=providerConfig();if(config.mode!=='live')throw new CareError('voice_not_configured',503);
   // Quota guard: never expose unauthenticated or unlimited provider tests.
   const q=await client.rpc('smriti_ai_quota');if(q.error)throw q.error;
+  const safeError=(error:unknown,fallback:string)=>{const value=error instanceof Error?error.message:'';return ['ai_auth','ai_model_unavailable','ai_request_rejected','ai_incomplete','ai_unavailable','ai_response_invalid','provider_timeout','provider_rate_limit','tts_unavailable','invalid_tts_audio','invalid_tts'].includes(value)?value:fallback;};
   let gemini:{ok:boolean;code?:string}={ok:false},timbre:{ok:boolean;code?:string}={ok:false};
   let sample:string|null=null;
   try{
