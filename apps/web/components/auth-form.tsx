@@ -47,7 +47,7 @@ export function AuthForm({mode,configured}:{mode:'login'|'signup';configured:boo
    <Link className="smriti-auth-primaryLink" href="/login">Go to sign in</Link>
   </div>:<form className="smriti-auth-form" onSubmit={submit} aria-busy={busy}>
    <label>Email address<input type="email" name="email" autoComplete="email" inputMode="email" required maxLength={254} placeholder="you@example.com" /></label>
-   <label>Password<input type="password" name="password" autoComplete={mode==='login'?'current-password':'new-password'} minLength={12} maxLength={128} required disabled={!configured} placeholder="Enter your password"/></label>
+   <label>Password<input type="password" name="password" autoComplete={mode==='login'?'current-password':'new-password'} minLength={12} maxLength={128} required placeholder="Enter your password"/></label>
    {mode==='signup'?<p className="smriti-auth-hint">Use at least 12 characters.</p>:null}
    {!configured?<p className="smriti-auth-error" role="alert">Account setup is temporarily unavailable. Please try the main Smriti site.</p>:null}
    {error?<p className="smriti-auth-error" role="alert">{error}</p>:null}
