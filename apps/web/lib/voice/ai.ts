@@ -18,14 +18,60 @@ export function validateEvidence(value:unknown,input:AIInput){
  return r;
 }
 export function mockAI(input:AIInput):AIResult{return{reply:asksToStop(input.text)?'We can stop here.':'This is a demo response. We can take our time. Would you like a quiet moment?',references:[],stop:asksToStop(input.text),findings:[],limitations:['Deterministic mock; no AI analysis was performed.']};}
+/** Minimal JSON schema: Gemini accepts a subset of JSON Schema, not the full Zod export. */
+const outputSchema={
+ type:'object',properties:{
+  reply:{type:'string'},references:{type:'array',items:{type:'string'}},
+  stop:{type:'boolean'},findings:{type:'array',items:{type:'object',properties:{
+   text:{type:'string'},source_ids:{type:'array',items:{type:'string'}},
+   quotes:{type:'array',items:{type:'object',properties:{source_id:{type:'string'},text:{type:'string'}},required:['source_id','text']}
+  },required:['text','source_ids','quotes']}},
+  limitations:{type:'array',items:{type:'string'}}
+ },required:['reply','references','stop','findings','limitations']
+};
+/** No hidden retries or mock substitution. Provider errors are categorized without exposing prompts. */
 export async function gemini(input:AIInput,config:{key:string;model:string},signal:AbortSignal,transport:typeof fetch=fetch){
  if(asksToStop(input.text))return{...mockAI(input),reply:'We can stop here.',limitations:[]};
  if(!/^gemini-[a-z0-9.-]+$/.test(config.model))throw new Error('model_config');
- const response=await transport(`https://generativelanguage.googleapis.com/v1beta/models/${config.model}:generateContent`,{method:'POST',headers:{'Content-Type':'application/json','x-goog-api-key':config.key},body:JSON.stringify({systemInstruction:{parts:[{text:SYSTEM_PROMPT}]},contents:[{role:'user',parts:[{text:JSON.stringify({...input,prompt_version:PROMPT_VERSION})}]}],generationConfig:{temperature:0.3,maxOutputTokens:1800,responseMimeType:'application/json',responseJsonSchema:z.toJSONSchema(resultSchema)}}),signal:AbortSignal.any([signal,AbortSignal.timeout(25000)]),cache:'no-store'});
- if(!response.ok)throw new Error(response.status===429?'provider_rate_limit':'ai_unavailable');
- const body=await boundedResponse(response,100000);const data=JSON.parse(new TextDecoder().decode(body));
- const candidate=data.candidates?.[0];if(candidate?.finishReason!=='STOP')throw new Error('ai_incomplete');
- const text=candidate.content?.parts?.filter((x:{thought?:boolean;text?:string})=>!x.thought&&typeof x.text==='string').map((x:{text:string})=>x.text).join('');
- return validateEvidence(JSON.parse(text),input);
+ const controller=new AbortController();
+ const timeout=setTimeout(()=>controller.abort('timeout'),25000);
+ let response:Response;
+ try{
+  response=await transport('https://generativelanguage.googleapis.com/v1beta/models/'+config.model+':generateContent',{
+   method:'POST',headers:{'Content-Type':'application/json','x-goog-api-key':config.key},
+   body:JSON.stringify({
+    systemInstruction:{parts:[{text:SYSTEM_PROMPT}]},
+    contents:[{role:'user',parts:[{text:JSON.stringify({...input,prompt_version:PROMPT_VERSION})}]}],
+    generationConfig:{
+     temperature:0.35,maxOutputTokens:1600,
+     responseMimeType:'application/json',responseJsonSchema:outputSchema,
+     ...(config.model==='gemini-2.5-flash'?{thinkingConfig:{thinkingBudget:0}}:{})
+    }
+   }),signal:AbortSignal.any([signal,controller.signal]),cache:'no-store'
+  });
+ }catch(e){
+  if(signal.aborted)throw new Error('call_cancelled');
+  throw new Error(controller.signal.aborted?'provider_timeout':'ai_unavailable');
+ }finally{clearTimeout(timeout);}
+ if(!response.ok){
+  // Never log model input, key, response body, or patient information.
+  console.error('Smriti Gemini request failed', {status:response.status,model:config.model});
+  if(response.status===401||response.status===403)throw new Error('ai_auth');
+  if(response.status===404)throw new Error('ai_model_unavailable');
+  if(response.status===429)throw new Error('provider_rate_limit');
+  if(response.status===400||response.status===422)throw new Error('ai_request_rejected');
+  if(response.status===408||response.status===504)throw new Error('provider_timeout');
+  throw new Error('ai_unavailable');
+ }
+ let data:unknown;
+ try{data=JSON.parse(new TextDecoder().decode(await boundedResponse(response,100000)));}
+ catch{throw new Error('ai_incomplete');}
+ const result=data as {candidates?:Array<{finishReason?:string,content?:{parts?:Array<{thought?:boolean,text?:string}>}}>};
+ const candidate=result.candidates?.[0];
+ if(candidate?.finishReason!=='STOP')throw new Error('ai_incomplete');
+ const text=candidate.content?.parts?.filter(x=>!x.thought&&typeof x.text==='string').map(x=>x.text).join('');
+ if(!text)throw new Error('ai_incomplete');
+ let parsed:unknown;try{parsed=JSON.parse(text);}catch{throw new Error('ai_incomplete');}
+ try{return validateEvidence(parsed,input);}catch{throw new Error('ai_response_invalid');}
 }
 export async function boundedResponse(response:Response,max:number){const reader=response.body?.getReader();if(!reader)throw new Error('empty_response');const parts:Uint8Array[]=[];let n=0;try{while(true){const r=await reader.read();if(r.done)break;n+=r.value.length;if(n>max){await reader.cancel();throw new Error('response_size');}parts.push(r.value);}}finally{reader.releaseLock();}const out=new Uint8Array(n);let p=0;for(const x of parts){out.set(x,p);p+=x.length;}return out;}
