@@ -26,11 +26,33 @@ export async function POST(request: Request, {params}: {params: Promise<{action:
  const authInput=credentials.safeParse(input.data);if(!authInput.success)return json({error:'invalid_request'},400);
  if (action==='login') {
   const {error}=await client.auth.signInWithPassword(authInput.data);
-  return error ? json({error:'sign_in_failed'},401) : json({ok:true});
+  if(error){
+   // Expose a safe, actionable error category without revealing credentials or account existence.
+   if(error.code==='email_not_confirmed')return json({error:'email_not_confirmed'},403);
+   if(error.status===429)return json({error:'auth_rate_limited'},429);
+   return json({error:'sign_in_failed'},401);
+  }
+  return json({ok:true});
  }
  // No role, verification status or scopes are accepted from signup input.
  const appUrl=process.env.SMRITI_APP_URL;
  if (!appUrl) return json({error:'not_configured'},503);
- const {error}=await client.auth.signUp({...authInput.data,options:{emailRedirectTo:new URL('/auth/callback',appUrl).href}});
- return error ? json({error:'sign_up_failed'},400) : json({ok:true,confirmationRequired:true});
+ const {data,error}=await client.auth.signUp({...authInput.data,options:{emailRedirectTo:new URL('/auth/callback',appUrl).href}});
+ if(error){
+  // Supabase's default SMTP has a strict shared limit. Never imply that repeated
+  // submissions or a different password will resolve a delivery failure.
+  const code=error.code||'';
+  if(code==='over_email_send_rate_limit'||code==='over_request_rate_limit'||error.status===429)
+   return json({error:'email_rate_limited'},429);
+  if(code==='email_address_not_authorized')return json({error:'email_delivery_restricted'},503);
+  if(code==='email_provider_disabled'||code==='signup_disabled')return json({error:'signup_disabled'},503);
+  if(code==='unexpected_failure'||code==='email_not_found'||code==='validation_failed')
+   return json({error:'signup_unavailable'},503);
+  if(code==='weak_password')return json({error:'weak_password'},400);
+  if(code==='user_already_exists')return json({error:'sign_up_failed'},400);
+  // Useful metadata only: no email, password or provider response bodies in logs.
+  console.error('Smriti signup provider failed',{status:error.status,code:code||'unknown'});
+  return json({error:'sign_up_failed'},error.status>=500?503:400);
+ }
+ return json({ok:true,confirmationRequired:!data.session});
 }
