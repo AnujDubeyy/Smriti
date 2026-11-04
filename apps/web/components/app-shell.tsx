@@ -4,7 +4,7 @@ import {usePathname} from 'next/navigation';
 import {useEffect,useRef,useState,useSyncExternalStore} from 'react';
 import {usePreferences} from '../app/preferences';
 import {messages,pillars,locales,localeNames,type Locale} from '../lib/messages';
-import {isEntryRoute,showCareNavigation,isPillarActive} from '../lib/navigation';
+import {isEntryRoute,isDoctorRoute,showCareNavigation,isPillarActive,doctorSections,isDoctorSectionActive} from '../lib/navigation';
 import {BrandLogo,Mascot} from './brand';
 import {PwaControls} from './pwa-controls';
 
@@ -31,7 +31,7 @@ function ProfileIcon(){
   <circle cx="12" cy="8" r="4"/><path d="M4 21c0-5 3-8 8-8s8 3 8 8"/>
  </svg>;
 }
-function CareNav({mode,expanded=false}:{mode:'desktop'|'mobile';expanded?:boolean}){
+function CareNav({mode,expanded=false,doctor=false}:{mode:'desktop'|'mobile';expanded?:boolean;doctor?:boolean}){
  const path=usePathname();
  const {locale}=usePreferences();
  const t=messages[locale];
@@ -39,7 +39,14 @@ function CareNav({mode,expanded=false}:{mode:'desktop'|'mobile';expanded?:boolea
   id={mode==='desktop'?'smriti-desktop-navigation':undefined}
   className={mode==='desktop'?'smriti-desktop-navigation':'smriti-mobile-navigation'}
   aria-label={mode==='desktop'?t.nav:t.nav+' — bottom tabs'}>
-  {pillars.map((pillar,index)=>{
+  {doctor?doctorSections.map(section=><Link key={section.href} href={section.href}
+    title={section.label} aria-label={section.label}
+    aria-current={isDoctorSectionActive(path,section.href)?'page':undefined}
+    className={'smriti-nav-item smriti-doctor-item '+section.icon+
+     (isDoctorSectionActive(path,section.href)?' is-active':'')}>
+    <span aria-hidden="true" className="smriti-doctor-nav-icon">{section.icon==='patients'?'♙':section.icon==='assessments'?'✓':section.icon==='monitoring'?'▥':'◌'}</span>
+    <span className="smriti-nav-label" aria-hidden={mode==='desktop'&&!expanded}>{section.label}</span>
+   </Link>):pillars.map((pillar,index)=>{
    const active=isPillarActive(path,pillar);
    return <Link
     key={pillar}
@@ -53,11 +60,11 @@ function CareNav({mode,expanded=false}:{mode:'desktop'|'mobile';expanded?:boolea
    </Link>;
   })}
   {mode==='desktop'?<Link
-   href="/profile"
+   href={doctor?'/doctor/profile':'/profile'}
    title="Profile and account"
    aria-label="Profile and account"
-   aria-current={path==='/profile'?'page':undefined}
-   className={'smriti-nav-item smriti-nav-profile'+(path==='/profile'?' is-active':'')}>
+   aria-current={path==='/profile'||path==='/doctor/profile'?'page':undefined}
+   className={'smriti-nav-item smriti-nav-profile'+(path==='/profile'||path==='/doctor/profile'?' is-active':'')}>
    <ProfileIcon/><span className="smriti-nav-label" aria-hidden={!expanded}>Profile</span>
   </Link>:null}
  </nav>;
@@ -67,7 +74,8 @@ export function AppShell({children}:{children:React.ReactNode}){
  const path=usePathname();
  const t=messages[locale];
  const entry=isEntryRoute(path);
- const showNav=showCareNavigation(path);
+ const doctor=isDoctorRoute(path);
+ const showNav=showCareNavigation(path)||doctor;
  const online=useSyncExternalStore(subscribe,()=>navigator.onLine,()=>true);
  const [expanded,setExpanded]=useState(false);
  const [accountOpen,setAccountOpen]=useState(false);
@@ -153,8 +161,8 @@ export function AppShell({children}:{children:React.ReactNode}){
        {locales.map(l=><option key={l} value={l}>{localeNames[l]}</option>)}
       </select>
      </label>
-     <Link href="/" className="smriti-account-option" onClick={()=>setAccountOpen(false)}>Home</Link>
-     <Link href="/profile" className="smriti-account-option" onClick={()=>setAccountOpen(false)}>Profile &amp; account</Link>
+     <Link href={doctor?'/doctor':'/'} className="smriti-account-option" onClick={()=>setAccountOpen(false)}>Home</Link>
+     <Link href={doctor?'/doctor/profile':'/profile'} className="smriti-account-option" onClick={()=>setAccountOpen(false)}>Profile &amp; account</Link>
      <button type="button" className="smriti-account-option smriti-signout"
       onClick={()=>void signOut()} disabled={signingOut}>
       {signingOut?'Signing out…':'Sign out'}
@@ -169,7 +177,7 @@ export function AppShell({children}:{children:React.ReactNode}){
     :'app-body smriti-app-body smriti-app-body--single'+(entry?' entry-body':'')
    }>
    {showNav?<aside className="smriti-desktop-rail">
-    <CareNav mode="desktop" expanded={expanded}/>
+    <CareNav mode="desktop" expanded={expanded} doctor={doctor}/>
    </aside>:null}
    <div className="content-column smriti-main-column">
     {!online?<div className="offline-notice" role="status">
@@ -179,6 +187,6 @@ export function AppShell({children}:{children:React.ReactNode}){
     {!entry?<footer className="app-footer"><PwaControls/></footer>:null}
    </div>
   </div>
-  {showNav?<CareNav mode="mobile"/>:null}
+  {showNav?<CareNav mode="mobile" doctor={doctor}/>:null}
  </div>;
 }
