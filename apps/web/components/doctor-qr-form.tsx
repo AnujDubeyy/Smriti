@@ -137,7 +137,7 @@ export function DoctorQrForm({existingCount=0}:{existingCount?:number}){
     </div>
     {data.diagnoses?.includes('other')?<label>Other condition<input required maxLength={150} value={data.other_condition||''} onChange={e=>set('other_condition',e.target.value)} placeholder="Clinician-described condition"/></label>:null}
     <label>Diagnosis certainty<select value={data.diagnosis_status} onChange={e=>setData(v=>({...v,
-     diagnosis_status:e.target.value,dementia_stage:e.target.value==='confirmed_by_clinician'?v.dementia_stage:'not_assessed'}))}>
+     diagnosis_status:e.target.value as NonNullable<DoctorIntake['diagnosis_status']>,dementia_stage:e.target.value==='confirmed_by_clinician'?v.dementia_stage:'not_assessed'}))}>
      <option value="under_evaluation">Under evaluation / provisional</option>
      <option value="confirmed_by_clinician">Clinician-documented diagnosis</option>
      <option value="unknown">Not known</option>
