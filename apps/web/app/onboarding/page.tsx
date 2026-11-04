@@ -1,3 +1,4 @@
+import {redirect} from 'next/navigation';
 import {requireAccount} from '../../lib/page-access';
 import {OnboardingFlow} from '../../components/onboarding-flow';
 export const dynamic='force-dynamic';
@@ -15,8 +16,8 @@ export default async function Page(){
    ?patient.care_details:{}) as Record<string,unknown>;
  const professional=(profile.professional_profile&&typeof profile.professional_profile==='object'
    ?profile.professional_profile:{}) as Record<string,unknown>;
- const selected=profile.onboarding_role==='doctor'||profile.onboarding_role==='caregiver'
-  ?profile.onboarding_role:null;
+ if(profile.onboarding_role==='caregiver')redirect('/profile');
+ const selected:'doctor'='doctor';
  return <OnboardingFlow
   initialRole={selected} initialName={profile.display_name||''}
   initialPatient={{...details,patient_name:patient?.preferred_name||'',locale:patient?.locale||profile.preferred_locale}}
