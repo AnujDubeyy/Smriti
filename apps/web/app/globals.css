@@ -216,3 +216,23 @@
 @media(prefers-reduced-motion:reduce){
  .smriti-app-body--nav,.smriti-nav-item{transition:none}
 }
+
+/* Doctor-specific navigation keeps clinicians in their own workspace. */
+.smriti-doctor-nav-icon{
+ width:34px;height:34px;display:grid;place-items:center;flex:none;
+ border-radius:11px;background:#f1f4f9;color:#273b5b;
+ font-size:23px;font-weight:900;line-height:1
+}
+.smriti-doctor-item.is-active{background:#eaf1ff;color:#1d4c9e;border-color:#d3e0fa}
+.smriti-doctor-item.is-active .smriti-doctor-nav-icon{background:#d8e6ff}
+.smriti-doctor-item .smriti-nav-label{line-height:1.2}
+@media(max-width:1023px){
+ .smriti-mobile-navigation:has(.smriti-doctor-item){
+  grid-template-columns:repeat(4,minmax(0,1fr));gap:4px;padding-inline:6px
+ }
+ .smriti-mobile-navigation .smriti-doctor-item{font-size:clamp(10px,2.5vw,12px)}
+ .smriti-mobile-navigation .smriti-doctor-nav-icon{height:29px;width:29px;font-size:20px}
+}
+@media(min-width:1024px){
+ .smriti-desktop-navigation .smriti-doctor-nav-icon{width:34px;height:34px}
+}
