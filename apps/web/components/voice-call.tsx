@@ -15,12 +15,12 @@ const LANGUAGES=[
  ['ta-IN','தமிழ்'],['ml-IN','മലയാളം']
 ] as const;
 const friendly:Record<string,string>={
- ai_auth:'Gemini key is invalid or does not have access. Check it in Vercel.',
- ai_model_unavailable:'The selected Gemini model is not available for this API key.',
- ai_request_rejected:'Gemini rejected the request. Check the model and its configuration.',
+ ai_auth:'The response service could not authenticate. Check the server API key.',
+ ai_model_unavailable:'The selected AI model is not available for this API key.',
+ ai_request_rejected:'The AI service rejected the request. Check the model and its configuration.',
  ai_response_invalid:'Smriti received an invalid response. Please try again.',
  ai_incomplete:'Smriti could not complete that reply. Please try again.',
- ai_unavailable:'Gemini could not connect. The call is still open. Try again.',
+ ai_unavailable:'The AI service could not connect. The call is still open. Try again.',
  provider_timeout:'The response timed out. Please try again.',
  provider_rate_limit:'The provider is busy or has reached its quota.',
  voice_not_configured:'Voice keys are not configured on the Smriti server.',
@@ -41,6 +41,7 @@ async function request(op:string,body:object,signal?:AbortSignal):Promise<any>{
 }
 function message(error:unknown){
  const key=error instanceof Error?error.message:String(error);
+ if(error instanceof DOMException&&error.name==='NotAllowedError')return 'Microphone access was denied. Allow it in your browser settings and try again.';
  return friendly[key]||'The call encountered an error. You can try again without restarting.';
 }
 /** Test-data only. Speech/audio is processed transiently and never written to browser storage. */
@@ -59,8 +60,6 @@ export function VoiceStudio({patientId}:{patientId?:string;demo?:boolean}){
  const [lastReply,setLastReply]=useState('');
  const [playbackBlocked,setPlaybackBlocked]=useState(false);
  const [transport,setTransport]=useState<'connecting'|'streaming'|'fallback'>('connecting');
- const [checking,setChecking]=useState(false);
- const [testResult,setTestResult]=useState<{gemini:{ok:boolean;code?:string};timbre:{ok:boolean;code?:string};sample?:string|null}|null>(null);
  const stageRef=useRef<Stage>('idle');
  const active=useRef(false);
  const sessionId=useRef('');
@@ -94,7 +93,7 @@ export function VoiceStudio({patientId}:{patientId?:string;demo?:boolean}){
   setCaptions(old=>[...old,{speaker,text,time:new Date().toISOString()}].slice(-60));
  },[]);
  const stopPlayback=useCallback(()=>{
-  const a=player.current;if(a){a.pause();a.removeAttribute('src');a.load();}
+  window.speechSynthesis?.cancel();const a=player.current;if(a){a.pause();a.removeAttribute('src');a.load();}
   if(objectUrl.current){URL.revokeObjectURL(objectUrl.current);objectUrl.current='';}
   setPlaybackBlocked(false);
  },[]);
@@ -123,10 +122,15 @@ export function VoiceStudio({patientId}:{patientId?:string;demo?:boolean}){
   if(line){append('smriti',line);setLastReply(line);history.current.push({speaker:'assistant',text:line.slice(0,1200)});}
   history.current=history.current.slice(-8);
   if(reply.result?.stop){endCall('Smriti ended the call.');return;}
-  if(reply.audioError)setError(friendly[reply.audioError]||'Timbre could not speak the reply.');
-  if(!reply.audio||speakerRef.current){
-   if(!reply.audio&&!reply.audioError)setError('Smriti replied in text but no audio was returned. Check Timbre settings.');
-   resetCapture();return;
+  if(speakerRef.current){resetCapture();return;}
+  if(!reply.audio){
+   if(line && 'speechSynthesis' in window){
+    stopPlayback();const utterance=new SpeechSynthesisUtterance(line);utterance.lang=language;
+    utterance.onend=()=>{if(active.current&&epoch.current===version)resetCapture();};
+    utterance.onerror=()=>{if(active.current&&epoch.current===version){setError('Voice playback is unavailable on this device.');resetCapture();}};
+    update('speaking','Smriti is speaking…');window.speechSynthesis.speak(utterance);return;
+   }
+   setError('Voice playback is unavailable on this device.');resetCapture();return;
   }
   try{
    stopPlayback();
@@ -139,7 +143,7 @@ export function VoiceStudio({patientId}:{patientId?:string;demo?:boolean}){
   }catch{
    setPlaybackBlocked(true);update('speaking','Your browser blocked sound. Tap “Hear Smriti”.');
   }
- },[append,endCall,resetCapture,stopPlayback,update]);
+ },[append,endCall,resetCapture,stopPlayback,update,language]);
  const handleSpeech=useCallback(async(text:string,source:'stream'|'rest',turnId?:string)=>{
   const said=text.trim().slice(0,3000);
   if(!said||!active.current||!sessionId.current)return;
@@ -247,19 +251,12 @@ export function VoiceStudio({patientId}:{patientId?:string;demo?:boolean}){
    }
   }
  };
- async function testProviders(){
-  if(checking||active.current)return;
-  setChecking(true);setTestResult(null);setError('');
-  try{const result=await request('diagnostics',{locale:language});setTestResult(result);}
-  catch(e){setError(message(e));}
-  finally{setChecking(false);}
- }
  async function start(){
-  if(active.current||!patientId||!consent)return;
-  const version=++epoch.current;setError('');setLastReply('');setCaptions([]);history.current=[];setElapsed(0);setTransport('connecting');
+  if(active.current||stageRef.current==='connecting'||!patientId||!consent)return;
+  const version=++epoch.current;setError('');setLastReply('');setCaptions([]);history.current=[];setElapsed(0);setTransport('fallback');
   update('connecting','Connecting to Smriti…');
   try{
-   const started=await request('start',{patient_id:patientId,locale:language,synthetic:true});
+   const started=await request('start',{patient_id:patientId,locale:language,synthetic:false});
    if(epoch.current!==version)return;sessionId.current=started.id;
    if(started.mode==='mock')throw new Error('voice_not_configured');
    if(!navigator.mediaDevices?.getUserMedia)throw new Error('Microphone requires HTTPS.');
@@ -272,7 +269,7 @@ export function VoiceStudio({patientId}:{patientId?:string;demo?:boolean}){
    node.onaudioprocess=e=>processFrame.current(e.inputBuffer.getChannelData(0),ctx.sampleRate);
    source.connect(node);const silent=ctx.createGain();silent.gain.value=0;node.connect(silent);silent.connect(ctx.destination);
    clock.current=Date.now();active.current=true;
-   if(process.env.NEXT_PUBLIC_SMRITI_GATEWAY_URL)void connectStream();
+   if(started.streaming&&process.env.NEXT_PUBLIC_SMRITI_GATEWAY_URL)void connectStream();
    void say('greeting');
   }catch(e){
    if(epoch.current!==version)return;setError(message(e));endCall('Unable to start this call.');
@@ -317,23 +314,15 @@ export function VoiceStudio({patientId}:{patientId?:string;demo?:boolean}){
    </div>}
   </div>
   <audio ref={player} onEnded={()=>{stopPlayback();resetCapture();}} onError={()=>{setError('Your browser could not play the audio response.');resetCapture();}} preload="auto"/>
-  {!inCall&&<label className={styles.consent}><input type="checkbox" checked={consent} onChange={e=>setConsent(e.target.checked)}/><span>I agree to temporary microphone processing for this fictional test profile. Transcript retention is controlled separately in Care permissions.</span></label>}
+  {!inCall&&<label className={styles.consent}><input type="checkbox" checked={consent} onChange={e=>setConsent(e.target.checked)}/><span>Allow the microphone for this call.</span></label>}
   <div className={styles.controls}>
-   {!inCall?<button className={styles.start} disabled={!consent||stage==='connecting'||checking} onClick={()=>void start()}>☎ Call Smriti</button>:<>
+   {!inCall?<button className={styles.start} disabled={!consent||stage==='connecting'} onClick={()=>void start()}>☎ Call Smriti</button>:<>
     <button className={styles.control} onClick={()=>{mutedRef.current=!mutedRef.current;setMuted(mutedRef.current);if(!mutedRef.current)resetCapture();}}>{muted?'Unmute':'Mute'} microphone</button>
     <button className={styles.control} onClick={()=>{speakerRef.current=!speakerRef.current;setSpeakerOff(speakerRef.current);if(player.current)player.current.muted=speakerRef.current;}}>{speakerOff?'Unmute':'Mute'} speaker</button>
     <button className={styles.control} disabled={stage==='thinking'||stage==='connecting'} onClick={()=>void say('story')}>Tell me a story</button>
     <button className={styles.end} onClick={()=>endCall()}>End call</button>
    </>}
   </div>
-  {!inCall&&<div className={styles.diagnostics}>
-   <button className="button secondary" type="button" disabled={checking} onClick={()=>void testProviders()}>{checking?'Checking voice services…':'Test Gemini + Timbre'}</button>
-   {testResult&&<div role="status">
-    <p>Gemini: {testResult.gemini.ok?'Connected':friendly[testResult.gemini.code||'']||testResult.gemini.code||'Failed'}</p>
-    <p>Timbre: {testResult.timbre.ok?'Connected':friendly[testResult.timbre.code||'']||testResult.timbre.code||'Failed'}</p>
-    {testResult.sample&&<audio controls src={'data:audio/wav;base64,'+testResult.sample} aria-label="Test Smriti voice"/>}
-   </div>}
-  </div>}
   {inCall&&<p className={styles.connection}>{transport==='streaming'?'Prisma live recognition':transport==='fallback'?'Automatic speech recognition':'Connecting speech recognition'}</p>}
   {error&&<div role="alert" className={styles.error}>{error}</div>}
   <div className={styles.bottom}>
@@ -341,6 +330,6 @@ export function VoiceStudio({patientId}:{patientId?:string;demo?:boolean}){
    <Link className="button secondary" href={'/permissions?patient='+patientId}>Care permissions</Link>
   </div>
   {showCaptions&&<div className={styles.captions} role="log">{captions.length?captions.map((entry,i)=><div className={entry.speaker==='smriti'?styles.smritiLine:styles.patientLine} key={entry.time+i}><strong>{entry.speaker==='smriti'?'Smriti':'You'}</strong><p lang={language}>{entry.text}</p></div>):<p>The conversation will appear here.</p>}</div>}
-  <p className={styles.small}>This test call uses Gnani speech and Gemini responses when configured. Sound requires browser permission. Conversations are not diagnoses. Do not enter real patient information in this prototype.</p>
+  <p className={styles.small}>Conversations are not medical diagnoses.</p>
  </section>;
 }

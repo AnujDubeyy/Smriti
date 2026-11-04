@@ -3,7 +3,7 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useEffect, useRef, useSyncExternalStore } from 'react';
 import { usePreferences } from '../app/preferences';
-import { messages, pillars, roles, locales, localeNames, type Locale, type Role } from '../lib/messages';
+import { messages, pillars, locales, localeNames, type Locale } from '../lib/messages';
 import { BrandLogo, Mascot } from './brand';
 import { authMessages } from '../lib/auth/messages';
 import { PwaControls } from './pwa-controls';
@@ -13,8 +13,8 @@ export function PillarNav() {
  return <nav className="pillar-nav" aria-label={t.nav}>{pillars.map((p, i) => <Link key={p} href={`/${p}`} className={`nav-link ${p}`} aria-current={path === `/${p}` || path.startsWith(`/${p}/`) ? 'page' : undefined}><Mascot pillar={p} /><span>{t.tabs[i]}</span></Link>)}</nav>;
 }
 export function AppShell({ children }: { children: React.ReactNode }) {
- const { role, setRole, locale, setLocale } = usePreferences(); const t = messages[locale]; const path = usePathname();
- const isPreview = ['/', '/assessment', '/companionship', '/monitoring'].includes(path);
+ const { locale, setLocale } = usePreferences(); const t = messages[locale]; const path = usePathname();
+ const isEntry = ['/login','/signup','/recover','/reset-password','/onboarding','/auth/callback'].includes(path);
  const a = authMessages[locale];
  const online = useSyncExternalStore(subscribe, () => navigator.onLine, () => true);
  const previousPath = useRef(path); const container = useRef<HTMLDivElement>(null);
@@ -23,10 +23,10 @@ export function AppShell({ children }: { children: React.ReactNode }) {
  <a href="#main" className="skip-link">{t.skip}</a>
  <header className="app-header"><Link href="/" className="brand-link" aria-label={t.brand}><BrandLogo alt={t.logo} /></Link><div className="preferences">
  <label className="field">{t.language}<select value={locale} onChange={e => setLocale(e.target.value as Locale)}>{locales.map(l => <option key={l} value={l}>{localeNames[l]}</option>)}</select></label>
- {isPreview ? <label className="field">{t.role}<select value={role} onChange={e => setRole(e.target.value as Role)}>{roles.map((r, i) => <option key={r} value={r}>{t.roles[i]}</option>)}</select></label> : null}<Link className="account-link" href="/patients/select" prefetch={false}>{a.account}</Link>
- </div></header><div className="app-body"><PillarNav /><div className="content-column">
+ {!isEntry && <><Link className="account-link" href="/onboarding">Details</Link><button className="account-link" onClick={async()=>{const r=await fetch('/api/auth/logout',{method:'POST'});if(r.ok)window.location.assign('/login');}}>Sign out</button></>}
+ </div></header><div className={isEntry?"app-body entry-body":"app-body"}>{!isEntry && <PillarNav />}<div className="content-column">
  {!online ? <div role="status" className="offline-notice">{t.offline}</div> : null}
  <main id="main" tabIndex={-1}>{children}</main>
- <footer className="app-footer"><p>{a.privacy}</p>{locale !== 'en-IN' ? <p>{t.beta}</p> : null}<PwaControls /></footer>
+ <footer className="app-footer"><p>{a.privacy}</p><PwaControls /></footer>
  </div></div></div>;
 }

@@ -1,6 +1,4 @@
-import Link from 'next/link';
-import Shell from '../shell';
-import {requireAccount} from '../../lib/page-access';
+export const dynamic='force-dynamic';
+import {workspace} from '../../lib/workspace';
 import {VoiceStudio} from '../../components/voice-call';
-import {z} from 'zod';
-export default async function Page({searchParams}:{searchParams:Promise<{patient?:string}>}){const {patient}=await searchParams;if(patient){await requireAccount();if(!z.uuid().safeParse(patient).success)return <p>Invalid patient selection.</p>;return <VoiceStudio patientId={patient}/>;}return <><Shell/><div className="actions"><Link href="/patients/select" className="button companionship" prefetch={false}>Choose patient and start conversation</Link><Link href="/voice" className="button secondary">How voice calls work</Link></div></>;}
+export default async function Page(){const p=await workspace();return <><h1>Welcome {p.preferred_name}</h1><VoiceStudio patientId={p.id}/></>;}
