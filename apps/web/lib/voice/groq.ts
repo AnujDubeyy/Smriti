@@ -5,7 +5,9 @@ async function checked(response:Response,kind:'chat'|'stt',model:string){
  if(!response.ok){
   // Only log provider, HTTP status and model. Never log prompts, transcripts, responses or keys.
   console.error('Smriti Groq request failed',{operation:kind,status:response.status,model});
-  if(response.status===401||response.status===403)throw new Error('ai_auth');
+  if(response.status===401)throw new Error('ai_auth');
+  // Groq can restrict individual models (403) while others remain usable.
+  if(response.status===403)throw new Error('ai_model_unavailable');
   if(response.status===429)throw new Error('provider_rate_limit');
   if(kind==='stt')throw new Error('stt_unavailable');
   if(response.status===404)throw new Error('ai_model_unavailable');
