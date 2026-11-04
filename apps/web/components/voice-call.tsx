@@ -59,6 +59,8 @@ export function VoiceStudio({patientId}:{patientId?:string;demo?:boolean}){
  const [lastReply,setLastReply]=useState('');
  const [playbackBlocked,setPlaybackBlocked]=useState(false);
  const [transport,setTransport]=useState<'connecting'|'streaming'|'fallback'>('connecting');
+ const [checking,setChecking]=useState(false);
+ const [testResult,setTestResult]=useState<{gemini:{ok:boolean;code?:string};timbre:{ok:boolean;code?:string};sample?:string|null}|null>(null);
  const stageRef=useRef<Stage>('idle');
  const active=useRef(false);
  const sessionId=useRef('');
@@ -245,6 +247,13 @@ export function VoiceStudio({patientId}:{patientId?:string;demo?:boolean}){
    }
   }
  };
+ async function testProviders(){
+  if(checking||active.current)return;
+  setChecking(true);setTestResult(null);setError('');
+  try{const result=await request('diagnostics',{locale:language});setTestResult(result);}
+  catch(e){setError(message(e));}
+  finally{setChecking(false);}
+ }
  async function start(){
   if(active.current||!patientId||!consent)return;
   const version=++epoch.current;setError('');setLastReply('');setCaptions([]);history.current=[];setElapsed(0);setTransport('connecting');
@@ -315,6 +324,14 @@ export function VoiceStudio({patientId}:{patientId?:string;demo?:boolean}){
     <button className={styles.end} onClick={()=>endCall()}>End call</button>
    </>}
   </div>
+  {!inCall&&<div className={styles.diagnostics}>
+   <button className="button secondary" type="button" disabled={checking} onClick={()=>void testProviders()}>{checking?'Checking voice services…':'Test Gemini + Timbre'}</button>
+   {testResult&&<div role="status">
+    <p>Gemini: {testResult.gemini.ok?'Connected':friendly[testResult.gemini.code||'']||testResult.gemini.code||'Failed'}</p>
+    <p>Timbre: {testResult.timbre.ok?'Connected':friendly[testResult.timbre.code||'']||testResult.timbre.code||'Failed'}</p>
+    {testResult.sample&&<audio controls src={'data:audio/wav;base64,'+testResult.sample} aria-label="Test Smriti voice"/>}
+   </div>}
+  </div>}
   {inCall&&<p className={styles.connection}>{transport==='streaming'?'Prisma live recognition':transport==='fallback'?'Automatic speech recognition':'Connecting speech recognition'}</p>}
   {error&&<div role="alert" className={styles.error}>{error}</div>}
   <div className={styles.bottom}>
