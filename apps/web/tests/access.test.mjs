@@ -89,6 +89,8 @@ test('doctor QR is single-use and does not bypass caretaker consent',async()=>{
   await db.query("insert into auth.users(id,email,email_confirmed_at,is_anonymous) values($1,$2,now(),false),($3,null,null,true)",
    [doctor,'doctor-qr@example.invalid',caretaker]);
   await db.query("update public.app_users set onboarding_role='doctor' where id=$1",[doctor]);
+  await assert.rejects(db.query('select public.smriti_claim_caretaker_qr($1::jsonb)',[JSON.stringify({token_hash:hash,authorized:true})]),
+   /qr_expired_or_used/);
   await db.query("select set_config('request.jwt.claim.sub',$1,true)",[doctor]);
   await db.exec('set local role authenticated');
   const hash='a'.repeat(64);
@@ -146,7 +148,6 @@ test('doctor QR is single-use and does not bypass caretaker consent',async()=>{
    'updating a doctor-authored intake must not bypass caretaker clinician-sharing consent');
 
 
-  await assert.rejects(db.query('select public.smriti_claim_caretaker_qr($1::jsonb)',[JSON.stringify({token_hash:hash,authorized:true})]),
-   /qr_expired_or_used/);
+
  }finally{await db.exec('rollback');}
 });
