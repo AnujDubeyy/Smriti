@@ -55,16 +55,22 @@ export function ProfileEditor({patientId,initial,email,isAnonymous,role}:{
    <p>Patient details can be updated here. Personal stories and daily observations are managed in their own sections.</p>
    <form onSubmit={updateDetails} className={styles.form}>
     <label>Caretaker name<input required value={details.caretaker_name} onChange={e=>set('caretaker_name',e.target.value)}/></label>
-    <div>
-     <span className={styles.fieldLabel}>Relationship to patient</span>
-     <div className={styles.relationshipScroller} role="group" aria-label="Relationship to patient">
-      {relationshipOptions.map(([id,label])=><button type="button" key={id}
-       className={details.relationship===id?styles.selectedPill:styles.pill}
-       aria-pressed={details.relationship===id} onClick={()=>set('relationship',id)}>{label}</button>)}
-     </div>
-     {details.relationship==='other'?<label>Specify relationship<input required maxLength={100}
-      value={details.relationship_other} onChange={e=>set('relationship_other',e.target.value)}/></label>:null}
-    </div>
+    <label>Relationship to patient
+     <select value={details.relationship} required
+      onChange={e=>setDetails(previous=>previous?{...previous,
+       relationship:e.target.value,
+       relationship_other:e.target.value==='other'?previous.relationship_other:''
+      }:previous)}
+      aria-label="Relationship to patient">
+      {relationshipOptions.map(([id,label])=><option key={id} value={id}>{label}</option>)}
+     </select>
+    </label>
+    {details.relationship==='other'?<label>Specify relationship
+     <input required minLength={2} maxLength={100} autoComplete="off"
+      placeholder="e.g. Family friend"
+      value={details.relationship_other}
+      onChange={e=>set('relationship_other',e.target.value)}/>
+    </label>:null}
     <label>Patient name<input required value={details.patient_name} onChange={e=>set('patient_name',e.target.value)}/></label>
     <div className={styles.two}>
      <label>Date of birth<input required type="date" value={details.date_of_birth} onChange={e=>set('date_of_birth',e.target.value)}/></label>
