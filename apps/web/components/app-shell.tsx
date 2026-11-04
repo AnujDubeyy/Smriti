@@ -23,7 +23,7 @@ function PillarNav(){
 export function AppShell({children}:{children:React.ReactNode}){
  const {locale,setLocale}=usePreferences();
  const t=messages[locale],path=usePathname();
- const entry=['/login','/signup','/recover','/reset-password','/onboarding','/accept-invite','/auth/callback'].includes(path);
+ const entry=['/login','/signup','/recover','/reset-password','/onboarding','/accept-invite','/auth/callback','/join'].includes(path);
  const doctor=path.startsWith('/doctor');
  const showNav=!entry&&!doctor;
  const online=useSyncExternalStore(subscribe,()=>navigator.onLine,()=>true);
@@ -42,7 +42,7 @@ export function AppShell({children}:{children:React.ReactNode}){
     <label className="field">Language<select value={locale} onChange={e=>setLocale(e.target.value as Locale)}>
      {locales.map(l=><option key={l} value={l}>{localeNames[l]}</option>)}
     </select></label>
-    <Link className="account-link" href="/onboarding">My details</Link>
+    <Link className="account-link" href="/profile" title="Profile settings" aria-label="Profile settings"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-5 3-8 8-8s8 3 8 8"/></svg><span>Profile</span></Link>
     <button className="account-link" type="button" onClick={async()=>{
      try{const r=await fetch('/api/auth/logout',{method:'POST'});if(r.ok)window.location.assign('/login');}catch{}
     }}>Sign out</button>
