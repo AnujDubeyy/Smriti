@@ -32,7 +32,7 @@ export function OnboardingFlow({initialRole=null,initialName='',initialPatient={
   patient_name:String(initialPatient.patient_name||''),date_of_birth:String(initialPatient.date_of_birth||''),
   sex:String(initialPatient.sex||'prefer_not_to_say'),family_count:String(initialPatient.family_count??''),
   support_notes:String(initialPatient.support_notes||''),locale:String(initialPatient.locale||'en-IN'),
-  audio_capture:false,transcript_retention:false,personalization:false
+  audio_capture:false,transcript_retention:false,personalization:false,authorized:false
  });
  const [doctor,setDoctor]=useState<Doctor>({
   doctor_name:String(initialProfessional.doctor_name||initialName||''),
