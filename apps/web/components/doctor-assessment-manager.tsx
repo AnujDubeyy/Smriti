@@ -1,12 +1,15 @@
 'use client';
 import {useEffect,useState} from 'react';
 import Link from 'next/link';
+import {useDemoCare,updateDemoCare,demoId} from '../lib/demo-care-store';
 import {activityCatalog,type Assignment,type ActivityCode} from '../lib/assessment-activities';
 import styles from './doctor-assessments.module.css';
 type Patient={patient_id:string;patient_name:string;caretaker_name:string;status:string;sharing_enabled:boolean};
-export function DoctorAssessmentManager({patients,initialPatient}:{patients:Patient[];initialPatient?:string}){
+export function DoctorAssessmentManager({patients,initialPatient,localPreview=false}:{patients:Patient[];initialPatient?:string;localPreview?:boolean}){
  const [selected,setSelected]=useState(initialPatient&&patients.some(p=>p.patient_id===initialPatient)?initialPatient:patients[0]?.patient_id||'');
- const [assignments,setAssignments]=useState<Assignment[]>([]);
+ const demo=useDemoCare();
+ const [liveAssignments,setAssignments]=useState<Assignment[]>([]);
+ const assignments=localPreview?demo.assignments:liveAssignments;
  const [loading,setLoading]=useState(false);
  const [busy,setBusy]=useState(false);
  const [dueDate,setDueDate]=useState('');
@@ -20,6 +23,7 @@ export function DoctorAssessmentManager({patients,initialPatient}:{patients:Pati
   return j.assignments as Assignment[];
  }
  useEffect(()=>{
+  if(localPreview)return;
   if(!current?.sharing_enabled||current.status!=='joined'){return;}
   const controller=new AbortController();
   const id=current.patient_id;
@@ -31,9 +35,13 @@ export function DoctorAssessmentManager({patients,initialPatient}:{patients:Pati
     :'Unable to load assignments. Try selecting the patient again.');
   }).finally(()=>{if(!controller.signal.aborted)setLoading(false);});
   return()=>controller.abort();
- },[selected,current?.sharing_enabled,current?.status]);
+ },[selected,current?.sharing_enabled,current?.status,localPreview]);
  async function assign(code:ActivityCode){
   if(!selected||busy||!current?.sharing_enabled)return;
+  if(localPreview){
+   updateDemoCare(state=>({...state,assignments:[...state.assignments,{id:demoId(),instrument_code:code,status:'assigned',due_date:dueDate||null,created_at:new Date().toISOString()}]}));
+   setMessage('Assigned to Ramesh. Open Patient view to see the notification and complete the activity.');return;
+  }
   setBusy(true);setError('');setMessage('');
   try{
    const response=await fetch('/api/v1/doctor/assessments',{

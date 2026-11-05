@@ -1,3 +1,4 @@
+import {observationDigest} from '../../../../../lib/log-digest';
 import {z} from 'zod';
 import {createHash} from 'node:crypto';
 import {requireCare,failure,CareError} from '../../../../../lib/care';
@@ -79,10 +80,12 @@ export async function POST(request:Request,{params}:{params:Promise<{operation:s
   const records=await rpc('logs',data);if(operation==='logs'){const {data:turns,error}=await client.from('voice_turns').select('id,session_id,transcript,result,created_at').eq('patient_id',data.patient_id).eq('status','complete').order('created_at',{ascending:false}).limit(100);if(error)throw error;return json({...records,turns});}
 
   if(!records.logs.length)return json({result:{reply:'No observations are available to summarize.',findings:[],references:[],stop:false,limitations:['No evidence available.']},provider:'none'});
+  if(!process.env.GROQ_API_KEY&&!process.env.GEMINI_API_KEY)return json({result:observationDigest(records.logs),provider:'extractive',notice:'AI is not configured. This digest lists the recorded evidence without interpretation.'});
   const a:AIInput={mode:'log_analysis',locale:'en-IN',text:'Summarize only the supplied observations.',approved_context:[],logs:z.array(itemSchema).parse(records.logs.map((x:{id:string;text:string;created_at:string})=>({id:x.id,text:x.text,recorded_at:x.created_at}))),history:[]};
   // Durable per-user quota, also on analysis requests, before an external call.
   const rate=await client.rpc('smriti_ai_quota');if(rate.error)throw rate.error;
-  const output=await respond(a,request.signal);await rpc('logs',data);return json(output);
+  try{const output=await respond(a,request.signal);await rpc('logs',data);return json(output);}
+  catch(error){if(request.signal.aborted)throw error;await rpc('logs',data);return json({result:observationDigest(records.logs),provider:'extractive',notice:'AI analysis is unavailable. Showing the recorded evidence instead.'});}
  }
  if(operation==='respond'){
   const data=reviewed.parse(input);const state=await rpc('check',data);

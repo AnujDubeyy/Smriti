@@ -12,7 +12,11 @@ export function providerConfig(){
  return{mode:'live' as const,speech,ai,aiProvider,speechProvider,ttsKey:process.env.GNANI_API_KEY_ID??'',model:aiProvider==='groq'?(process.env.GROQ_MODEL??'openai/gpt-oss-120b'):(process.env.GEMINI_MODEL??'gemini-2.5-flash'),voice:process.env.GNANI_DEFAULT_VOICE_ID??'Shivani'};
 }
 export async function respond(input:AIInput,signal:AbortSignal){
- const config=providerConfig();
+ // Text generation does not require speech provider credentials.
+ const aiProvider=process.env.LLM_PROVIDER??(process.env.GROQ_API_KEY?'groq':'gemini');
+ const ai=aiProvider==='groq'?process.env.GROQ_API_KEY:process.env.GEMINI_API_KEY;
+ if(!ai)throw new Error('voice_not_configured');
+ const config={aiProvider,ai,model:aiProvider==='groq'?(process.env.GROQ_MODEL??'openai/gpt-oss-120b'):(process.env.GEMINI_MODEL??'gemini-2.5-flash')};
  const chain=createModelChain({
   primary:{provider:config.aiProvider==='groq'?'groq':'gemini',model:config.model,key:config.ai},
   groqKey:process.env.GROQ_API_KEY,

@@ -1,9 +1,11 @@
+import {localDoctorPreview} from '../../../lib/local-doctor-preview';
 import Link from 'next/link';
 import {redirect} from 'next/navigation';
 import {authenticatedClient} from '../../../lib/auth/access';
 import {ProfileEditor} from '../../../components/profile-editor';
 export const dynamic='force-dynamic';
 export default async function DoctorProfile(){
+ if(localDoctorPreview())return <section className="journal-card"><h1>Doctor’s profile</h1><p>Fictional demo account. Live profile editing requires sign-in.</p></section>;
  const auth=await authenticatedClient();
  if(!auth.client||!auth.user)redirect('/login');
  const {data:account,error}=await auth.client.from('app_users')

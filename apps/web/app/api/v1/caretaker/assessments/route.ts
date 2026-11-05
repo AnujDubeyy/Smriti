@@ -27,3 +27,10 @@ export async function POST(request:Request){
   return json(data);
  }catch(e){return failure(e);}
 }
+
+export async function GET(){try{
+ const client=await requireCare();const {data:{user}}=await client.auth.getUser();if(!user)throw new CareError('unauthorized',401);
+ const {data:patient,error:patientError}=await client.from('patients').select('id').eq('linked_user_id',user.id).eq('synthetic',true).order('created_at',{ascending:false}).limit(1).maybeSingle();
+ if(patientError)throw patientError;if(!patient)return json({assignments:[]});
+ const {data,error}=await client.rpc('smriti_caretaker_assessments',{operation:'list',input:{patient_id:patient.id}});if(error)throw error;return json({assignments:Array.isArray(data)?data:[]});
+}catch(e){return failure(e);}}

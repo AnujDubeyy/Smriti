@@ -1,3 +1,4 @@
+import {localDoctorPreview,demoPatients} from '../../lib/local-doctor-preview';
 import Link from 'next/link';
 import {redirect} from 'next/navigation';
 import {authenticatedClient} from '../../lib/auth/access';
@@ -14,11 +15,12 @@ export default async function DoctorWorkspace(){
  // authenticatedClient already verifies the session. Avoid a second auth.getUser
  // and do not make extra membership/patient queries: the scoped roster RPC
  // returns current doctor-owned invitations and sharing status in one call.
- const auth=await authenticatedClient();
- if(!auth.client||!auth.user)redirect('/login');
- const [{data:account,error:accountError},{data:roster,error:rosterError}]=await Promise.all([
-  auth.client.from('app_users').select('onboarding_role,display_name').eq('id',auth.user.id).single(),
-  auth.client.rpc('smriti_doctor_qr_roster')
+ const localPreview=localDoctorPreview();
+ const auth=localPreview?null:await authenticatedClient();
+ if(!localPreview&&(!auth?.client||!auth.user))redirect('/login');
+ const [{data:account,error:accountError},{data:roster,error:rosterError}]=localPreview?[{data:{onboarding_role:'doctor',display_name:'Doctor'},error:null},{data:demoPatients,error:null}]:await Promise.all([
+  auth!.client!.from('app_users').select('onboarding_role,display_name').eq('id',auth!.user!.id).single(),
+  auth!.client!.rpc('smriti_doctor_qr_roster')
  ]);
  if(accountError||!account)return <section role="status"><h1>Account unavailable</h1><p>Please refresh and try again.</p></section>;
  if(account.onboarding_role!=='doctor')redirect('/');
@@ -45,7 +47,7 @@ export default async function DoctorWorkspace(){
          ?item.sharing_enabled?'Caretaker connected · Sharing enabled':'Caretaker connected · Sharing not yet enabled'
          :item.status==='expired'?'Invitation expired':'Waiting for caretaker to scan QR'}
        </span>
-       <DoctorIntakeEditor patientId={item.patient_id} initial={item.clinical_intake||null}/>
+       {localPreview?<p className="small">Fictional profile for testing. No clinical history recorded.</p>:<DoctorIntakeEditor patientId={item.patient_id} initial={item.clinical_intake||null}/>}
       </div>
       <div style={{display:'flex',flexWrap:'wrap',gap:8,justifyContent:'flex-end'}}>
        {item.status==='joined'&&item.sharing_enabled?
@@ -59,10 +61,10 @@ export default async function DoctorWorkspace(){
    {invitations.some(x=>x.status==='joined'&&!x.sharing_enabled)
     ?<p style={{fontSize:13,color:'#655e52',marginTop:12}}>The caretaker is connected. For privacy, your clinical monitoring access opens only after they enable doctor sharing in their profile.</p>:null}
   </div>
-  <DoctorQrForm existingCount={count}/>
+  {localPreview?<p className="preview-note">Demo patient is ready. Use Patient view above to try the caretaker experience.</p>:<DoctorQrForm existingCount={count}/>}
   <div className="doctor-status">
    <div><strong>Your profile</strong><p>Doctor workspace</p></div>
-   <Link className="button secondary" href="/profile">Profile settings</Link>
+   <Link className="button secondary" href="/doctor/profile">Profile settings</Link>
   </div>
   <p className="small">The clinical intake is based on clinician-entered fictional test information. Smriti does not calculate a diagnosis or dementia stage.</p>
  </section>;

@@ -1,3 +1,4 @@
+import {localDoctorPreview,demoPatients} from '../../../../lib/local-doctor-preview';
 import Link from 'next/link';
 import {notFound,redirect} from 'next/navigation';
 import {z} from 'zod';
@@ -7,6 +8,7 @@ export const dynamic='force-dynamic';
 export default async function DoctorPatient({params}:{params:Promise<{id:string}>}){
  const {id}=await params;
  if(!z.uuid().safeParse(id).success)notFound();
+ if(localDoctorPreview()&&id===demoPatients[0].patient_id)return <section className="doctor-patient"><p className="eyebrow">FICTIONAL PATIENT</p><h1>{demoPatients[0].patient_name}</h1><p>Caretaker: {demoPatients[0].caretaker_name}</p><Link className="button assessment" href={'/doctor/assessments?patient='+id}>Assign assessment</Link><LogsPanel patientId={id} readOnly localPreview/></section>;
  const client=await requireAccount();
  const {data:{user}}=await client.auth.getUser();
  const {data:doctor}=await client.from('app_users').select('onboarding_role').eq('id',user!.id).single();

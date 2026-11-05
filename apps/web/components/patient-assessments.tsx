@@ -1,11 +1,14 @@
 'use client';
 import {useEffect,useState} from 'react';
+import {useDemoCare,updateDemoCare} from '../lib/demo-care-store';
 import {activityCatalog,activityPrompt,isActivityCode,type Assignment,type ActivityCode} from '../lib/assessment-activities';
 import styles from './patient-assessments.module.css';
-export function PatientAssessments({patientId,name,locale,initial}:{
- patientId:string;name:string;locale:string;initial:Assignment[]
+export function PatientAssessments({patientId,name,locale,initial,localPreview=false}:{
+ patientId:string;name:string;locale:string;initial:Assignment[];localPreview?:boolean
 }){
- const [assignments,setAssignments]=useState(initial);
+ const demo=useDemoCare();
+ const [liveAssignments,setAssignments]=useState(initial);
+ const assignments=localPreview?demo.assignments:liveAssignments;
  const [selected,setSelected]=useState<string|null>(null);
  const [reply,setReply]=useState('');
  const [observation,setObservation]=useState('');
@@ -23,6 +26,11 @@ export function PatientAssessments({patientId,name,locale,initial}:{
   return()=>window.clearInterval(interval);
  },[timerActive]);
  useEffect(()=>()=>window.speechSynthesis?.cancel(),[]);
+ useEffect(()=>{
+  if(localPreview)return;const controller=new AbortController();
+  const refresh=()=>{if(document.hidden)return;fetch('/api/v1/caretaker/assessments',{cache:'no-store',signal:controller.signal}).then(r=>{if(!r.ok)throw new Error();return r.json();}).then(data=>setAssignments(data.assignments)).catch(()=>{});};
+  const timer=setInterval(refresh,15000);window.addEventListener('focus',refresh);return()=>{controller.abort();clearInterval(timer);window.removeEventListener('focus',refresh);};
+ },[localPreview]);
  const pending=assignments.filter(a=>a.status==='assigned');
  const completed=assignments.filter(a=>a.status!=='assigned');
  const chosen=assignments.find(a=>a.id===selected);
@@ -39,6 +47,7 @@ export function PatientAssessments({patientId,name,locale,initial}:{
   e.preventDefault();if(!chosen||busy||!reply.trim())return;
   setBusy(true);setError('');setMessage('');
   try{
+   if(localPreview){updateDemoCare(state=>({...state,assignments:state.assignments.map(a=>a.id===chosen.id?{...a,status:'submitted',submitted_at:new Date().toISOString(),response_text:reply.trim(),caregiver_observation:observation.trim()}:a)}));}else{
    const response=await fetch('/api/v1/caretaker/assessments',{
     method:'POST',headers:{'Content-Type':'application/json'},
     body:JSON.stringify({
@@ -48,6 +57,7 @@ export function PatientAssessments({patientId,name,locale,initial}:{
    });
    const body=await response.json().catch(()=>({error:'temporarily_unavailable'}));
    if(!response.ok)throw new Error(body.error||'temporarily_unavailable');
+   }
    setAssignments(items=>items.map(item=>item.id===chosen.id?{...item,status:'submitted'}:item));
    setSelected(null);setReply('');setObservation('');setTimerActive(false);
    setRemaining(60);

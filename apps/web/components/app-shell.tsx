@@ -6,6 +6,7 @@ import {usePreferences} from '../app/preferences';
 import {messages,pillars,locales,localeNames,type Locale} from '../lib/messages';
 import {isEntryRoute,isDoctorRoute,showCareNavigation,isPillarActive,doctorSections,isDoctorSectionActive} from '../lib/navigation';
 import {BrandLogo,Mascot} from './brand';
+import {NotificationPanel} from './notification-panel';
 import {PwaControls} from './pwa-controls';
 
 function subscribe(callback:()=>void){
@@ -39,6 +40,7 @@ function CareNav({mode,expanded=false,doctor=false}:{mode:'desktop'|'mobile';exp
   id={mode==='desktop'?'smriti-desktop-navigation':undefined}
   className={mode==='desktop'?'smriti-desktop-navigation':'smriti-mobile-navigation'}
   aria-label={mode==='desktop'?t.nav:t.nav+' — bottom tabs'}>
+  {!doctor?<Link href="/" title="Home" aria-label="Home" aria-current={path==='/'?'page':undefined} className={'smriti-nav-item'+(path==='/'?' is-active':'')}><span className="home-nav-icon" aria-hidden="true">⌂</span><span className="smriti-nav-label">Home</span></Link>:null}
   {doctor?doctorSections.map(section=><Link key={section.href} href={section.href}
     title={section.label} aria-label={section.label}
     aria-current={isDoctorSectionActive(path,section.href)?'page':undefined}
@@ -69,7 +71,7 @@ function CareNav({mode,expanded=false,doctor=false}:{mode:'desktop'|'mobile';exp
   </Link>:null}
  </nav>;
 }
-export function AppShell({children}:{children:React.ReactNode}){
+export function AppShell({children,localPreview=false}:{children:React.ReactNode;localPreview?:boolean}){
  const {locale,setLocale}=usePreferences();
  const path=usePathname();
  const t=messages[locale];
@@ -138,11 +140,12 @@ export function AppShell({children}:{children:React.ReactNode}){
      onClick={()=>setExpanded(v=>!v)}>
      {expanded?<CloseIcon/>:<MenuIcon/>}
     </button>:null}
-    <Link href="/" className="brand-link" aria-label={t.brand}>
+    <Link href={doctor?'/doctor':'/'} className="brand-link" aria-label={t.brand}>
      <BrandLogo alt={t.logo}/>
     </Link>
    </div>
    {!entry?<div className="smriti-header-trailing" ref={accountRef}>
+    <NotificationPanel localPreview={localPreview}/>
     <button
      className="smriti-account-toggle"
      type="button"
@@ -183,7 +186,10 @@ export function AppShell({children}:{children:React.ReactNode}){
     {!online?<div className="offline-notice" role="status">
      You are offline. Reconnect to use your care account.
     </div>:null}
-    <main id="main" tabIndex={-1}>{children}</main>
+    <main id="main" tabIndex={-1}>
+     {localPreview?<div className="preview-switch"><span>Demo workspace</span><div><Link href="/doctor" aria-current={doctor?'page':undefined}>Doctor view</Link><Link href="/" aria-current={!doctor?'page':undefined}>Patient view</Link></div></div>:null}
+     {path!=='/'&&path!=='/doctor'?<nav className="page-breadcrumb" aria-label="Page navigation"><Link href={entry?'/login':doctor?'/doctor':'/'}>← {entry?'Back to sign in':doctor?'Back to patients':'Back to home'}</Link>{!entry?<Link href={doctor?'/doctor/assessments':'/assessment'}>Assessments</Link>:null}{!entry?<Link href={doctor?'/doctor/monitoring':'/monitoring'}>Monitoring</Link>:null}</nav>:null}
+     <div className="route-content" key={path}>{children}</div></main>
     {!entry?<footer className="app-footer"><PwaControls/></footer>:null}
    </div>
   </div>

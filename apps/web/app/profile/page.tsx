@@ -1,3 +1,4 @@
+import {localDoctorPreview} from '../../lib/local-doctor-preview';
 import Link from 'next/link';
 import {redirect} from 'next/navigation';
 import {requireAccount} from '../../lib/page-access';
@@ -5,6 +6,7 @@ import {ProfileEditor} from '../../components/profile-editor';
 import {normalizeCaregiverRelationship} from '../../lib/clinical-intake';
 export const dynamic='force-dynamic';
 export default async function Profile(){
+ if(localDoctorPreview())return <section className="journal-card"><h1>Ramesh Sharma’s profile</h1><p>Fictional demo account. Live profile editing requires sign-in.</p></section>;
  const client=await requireAccount();
  const {data:{user}}=await client.auth.getUser();
  const {data:account,error}=await client.from('app_users').select('onboarding_role,display_name').eq('id',user!.id).single();

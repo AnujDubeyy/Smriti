@@ -1,3 +1,4 @@
+import {localDoctorPreview,demoPatients} from '../../../lib/local-doctor-preview';
 import {redirect} from 'next/navigation';
 import {authenticatedClient} from '../../../lib/auth/access';
 import {DoctorAssessmentManager} from '../../../components/doctor-assessment-manager';
@@ -6,6 +7,7 @@ type Patient={patient_id:string;patient_name:string;caretaker_name:string;status
 export default async function DoctorAssessments({
  searchParams
 }:{searchParams:Promise<{patient?:string}>}){
+ if(localDoctorPreview())return <DoctorAssessmentManager patients={demoPatients} localPreview/>;
  const auth=await authenticatedClient();
  if(!auth.client||!auth.user)redirect('/login');
  const [{data:account,error},{data:roster,error:rosterError}]=await Promise.all([

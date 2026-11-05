@@ -1,0 +1,2 @@
+/** Exact evidence only, without generated medical conclusions. */
+export function observationDigest(logs:{id:string;text:string}[]){return {reply:`${logs.length} recorded observation${logs.length===1?'':'s'}. Review the original notes below.`,findings:logs.slice(0,20).map(log=>({text:'Recorded observation',source_ids:[log.id],quotes:[{source_id:log.id,text:log.text}]})),limitations:['This is an observation digest, not AI analysis or a clinical assessment.',...(logs.length>20?['Showing the 20 most recent observations.']:[])],references:[],stop:false};}

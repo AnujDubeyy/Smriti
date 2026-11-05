@@ -1,0 +1,4 @@
+import {test} from 'node:test';import assert from 'node:assert/strict';
+import {observationDigest} from '../lib/log-digest.ts';
+test('digest preserves exact evidence and source attribution',()=>{const logs=[{id:'one',text:'He enjoyed music.'},{id:'two',text:'He rested after the walk.'}];const r=observationDigest(logs);assert.deepEqual(r.findings.flatMap(f=>f.quotes),logs.map(l=>({source_id:l.id,text:l.text})));assert.match(r.limitations[0],/not AI analysis/);});
+test('digest handles empty evidence and discloses truncation',()=>{assert.equal(observationDigest([]).findings.length,0);const r=observationDigest(Array.from({length:25},(_,i)=>({id:String(i),text:'Note '+i})));assert.equal(r.findings.length,20);assert.match(r.reply,/25 recorded/);assert.match(r.limitations.join(' '),/20 most recent/);});
