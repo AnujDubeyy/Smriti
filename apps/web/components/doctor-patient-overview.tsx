@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import cards from './doctor-patient-card.module.css';
+import {SmritiArt} from './smriti-art';
 type Patient={patient_id:string;patient_name:string;caretaker_name:string;status:string;sharing_enabled:boolean};
 export function DoctorPatientOverview({patients,focus}:{
  patients:Patient[];focus:'monitoring'|'conversations'
@@ -16,7 +17,7 @@ export function DoctorPatientOverview({patients,focus}:{
    <h2>Connected patients</h2>
    {patients.length?<ul className={cards.list}>{patients.map(p=><li key={p.patient_id} className={cards.card}>
     <div className={cards.identity}>
-     <strong>{p.patient_name}</strong>
+     <span className="smriti-patient-identity"><SmritiArt name="patient-avatar" size={48}/><strong>{p.patient_name}</strong></span>
      <p>Caretaker: {p.caretaker_name}</p>
      <small>{p.status!=='joined'?'Caretaker has not joined yet':p.sharing_enabled?'Doctor sharing enabled':'Waiting for caretaker permission'}</small>
     </div>
@@ -25,7 +26,7 @@ export function DoctorPatientOverview({patients,focus}:{
        {monitoring?'Open monitoring':'View conversations'}
       </Link></div>
      :null}
-   </li>)}</ul>:<p>No connected patients yet. Create a patient from your workspace.</p>}
+   </li>)}</ul>:<div className="smriti-empty-art"><SmritiArt name="care-together" size={106}/><p>No connected patients yet. Create a patient from your workspace.</p></div>}
   </div>
  </section>;
 }
