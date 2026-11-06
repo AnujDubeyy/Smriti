@@ -37,17 +37,15 @@ export function JoinCaretaker(){
   }finally{setBusy(false);}
  }
  return <section className={styles.shell}>
-  <span className={styles.kicker}>SMRITI · CARETAKER INVITATION</span>
-  <h1>Welcome to Smriti</h1>
+  <h1>Join your care profile</h1>
   <p>Join the care profile your doctor created for you.</p>
   {!token?<div role="alert" className={styles.error}>No usable QR invitation found. Ask the doctor to share a fresh QR or link.</div>
   :<div className={styles.inner}>
-   <h2>Activate your caretaker account</h2>
-   <p>After joining, add an email and password to access this profile on another device.</p>
    <label className={styles.agree}><input type="checkbox" checked={authorized} onChange={e=>setAuthorized(e.target.checked)}/>
     <span>I am authorized to manage this <strong>fictional test</strong> patient profile.</span>
    </label>
    <button type="button" className={styles.primary} onClick={()=>void accept()} disabled={!authorized||busy}>{busy?'Connecting…':'Join care profile'}</button>
+   <p>Next, add an email and password to use this account on another device.</p>
   </div>}
   {error&&<p role="alert" className={styles.error}>{error}</p>}
  </section>;

@@ -145,7 +145,7 @@ export function AppShell({children,localPreview=false}:{children:React.ReactNode
     </Link>
    </div>
    {!entry?<div className="smriti-header-trailing" ref={accountRef}>
-    <NotificationPanel localPreview={localPreview}/>
+    <NotificationPanel/>
     <button
      className="smriti-account-toggle"
      type="button"
@@ -187,7 +187,7 @@ export function AppShell({children,localPreview=false}:{children:React.ReactNode
      You are offline. Reconnect to use your care account.
     </div>:null}
     <main id="main" tabIndex={-1}>
-     {localPreview?<div className="preview-switch"><span>Demo workspace</span><div><Link href="/doctor" aria-current={doctor?'page':undefined}>Doctor view</Link><Link href="/" aria-current={!doctor?'page':undefined}>Patient view</Link></div></div>:null}
+     {localPreview&&!entry?<div className="preview-switch"><span>Demo workspace</span><div><Link href="/doctor" aria-current={doctor?'page':undefined}>Doctor view</Link><Link href="/" aria-current={!doctor?'page':undefined}>Patient view</Link></div></div>:null}
      {path!=='/join'&&path!=='/'&&path!=='/doctor'?<nav className="page-breadcrumb" aria-label="Page navigation"><Link href={entry?'/login':doctor?'/doctor':'/'}>← {entry?'Back to sign in':doctor?'Back to patients':'Back to home'}</Link>{!entry?<Link href={doctor?'/doctor/assessments':'/assessment'}>Assessments</Link>:null}{!entry?<Link href={doctor?'/doctor/monitoring':'/monitoring'}>Monitoring</Link>:null}</nav>:null}
      <div className="route-content" key={path}>{children}</div></main>
     {!entry?<PwaControls/>:null}

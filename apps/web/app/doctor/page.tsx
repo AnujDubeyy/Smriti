@@ -4,6 +4,7 @@ import {redirect} from 'next/navigation';
 import {authenticatedClient} from '../../lib/auth/access';
 import {DoctorQrForm} from '../../components/doctor-qr-form';
 import {DoctorIntakeEditor} from '../../components/doctor-intake-editor';
+import cards from '../../components/doctor-patient-card.module.css';
 export const dynamic='force-dynamic';
 
 type PatientInvite={
@@ -38,18 +39,18 @@ export default async function DoctorWorkspace(){
   <div className="doctor-onboarding-next">
    <h2>Your patients {count>0?'('+count+')':''}</h2>
    {rosterError?<p role="alert">Patient statuses could not be loaded. Refresh the page. Existing profiles have not been deleted.</p>
-    :count>0?<ul className="doctor-patient-list">{invitations.map(item=><li key={item.patient_id} style={{alignItems:'center',gap:14}}>
-      <div style={{flex:1}}>
+    :count>0?<ul className={cards.list}>{invitations.map(item=><li key={item.patient_id} className={cards.card}>
+      <div className={cards.identity}>
        <strong>{item.patient_name}</strong>
        <p style={{fontSize:13,margin:'4px 0'}}>Caretaker: {item.caretaker_name}</p>
-       <span style={{fontSize:13,color:'#665d4e',fontWeight:750}}>
+       <span className={cards.status}>
         {item.status==='joined'
          ?item.sharing_enabled?'Caretaker connected · Sharing enabled':'Caretaker connected · Sharing not yet enabled'
          :item.status==='expired'?'Invitation expired':'Waiting for caretaker to scan QR'}
        </span>
-       {localPreview?<p className="small">Fictional profile for testing. No clinical history recorded.</p>:<DoctorIntakeEditor patientId={item.patient_id} initial={item.clinical_intake||null}/>}
       </div>
-      <div style={{display:'flex',flexWrap:'wrap',gap:8,justifyContent:'flex-end'}}>
+      <DoctorIntakeEditor patientId={item.patient_id} initial={item.clinical_intake||null} preview={localPreview}/>
+      <div className={cards.actions}>
        {item.status==='joined'&&item.sharing_enabled?
         <>
          <Link className="button secondary" href={'/doctor/assessments?patient='+item.patient_id}>Assign assessment</Link>

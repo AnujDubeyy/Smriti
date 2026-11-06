@@ -55,6 +55,21 @@ export function ProfileEditor({patientId,initial,email,isAnonymous,role,hasPassw
  return <section className={styles.root}>
   <header><span className={styles.kicker}>MY PROFILE</span><h1>Profile & account</h1>
    <p>Manage your Smriti login and connected fictional care information.</p></header>
+  <section className={styles.card} id="login-details">
+   <h2>Login details</h2>
+   {isAnonymous?<p className={styles.notice}>Keep this browser signed in until you verify your email and set a password.</p>:null}
+   <form className={styles.form} onSubmit={e=>{e.preventDefault();void updateCredentials(requested===emailValue?'resend':'email');}}>
+    <label>Email address<input type="email" required maxLength={254} value={emailValue} onChange={e=>setEmailValue(e.target.value)} autoComplete="email"/></label>
+    <button disabled={accountBusy||!emailValue||emailValue===email}>{requested===emailValue&&requested?'Resend verification email':email?'Change email':'Verify email'}</button>
+   </form>
+   {passwordSet&&!editPassword?<button type="button" onClick={()=>setEditPassword(true)}>Edit password</button>:<form className={styles.form} onSubmit={e=>{e.preventDefault();void updateCredentials('password');}}>
+    <label>New password<input required type="password" minLength={12} maxLength={128} value={password} onChange={e=>setPassword(e.target.value)} placeholder="At least 12 characters" autoComplete="new-password"/></label>
+    <button disabled={accountBusy||password.length<12||isAnonymous}>{passwordSet?'Save password':'Set password'}</button>
+   </form>}
+   {accountMsg&&<p className={styles.success} role="status">{accountMsg}</p>}
+   {accountErr&&<p className={styles.error} role="alert">{accountErr}</p>}
+   <p className={styles.hint}>Email verification may still be required by Supabase when converting a temporary QR session to a recoverable account. This protects account ownership.</p>
+  </section>
   {role==='caregiver'&&patientId&&details?<section className={styles.card}>
    <h2>Care profile</h2>
    <p>Patient details can be updated here. Personal stories and daily observations are managed in their own sections.</p>
@@ -95,20 +110,6 @@ export function ProfileEditor({patientId,initial,email,isAnonymous,role,hasPassw
     <Link href="/monitoring">Daily observations</Link>
    </div>
   </section>:null}
-  <section className={styles.card} id="login-details">
-   <h2>Login details</h2>
-   {isAnonymous?<p className={styles.notice}>Keep this browser signed in until you verify your email and set a password.</p>:null}
-   <form className={styles.form} onSubmit={e=>{e.preventDefault();void updateCredentials(requested===emailValue?'resend':'email');}}>
-    <label>Email address<input type="email" required maxLength={254} value={emailValue} onChange={e=>setEmailValue(e.target.value)} autoComplete="email"/></label>
-    <button disabled={accountBusy||!emailValue||emailValue===email}>{requested===emailValue&&requested?'Resend verification email':email?'Change email':'Verify email'}</button>
-   </form>
-   {passwordSet&&!editPassword?<button type="button" onClick={()=>setEditPassword(true)}>Edit password</button>:<form className={styles.form} onSubmit={e=>{e.preventDefault();void updateCredentials('password');}}>
-    <label>New password<input required type="password" minLength={12} maxLength={128} value={password} onChange={e=>setPassword(e.target.value)} placeholder="At least 12 characters" autoComplete="new-password"/></label>
-    <button disabled={accountBusy||password.length<12||isAnonymous}>{passwordSet?'Save password':'Set password'}</button>
-   </form>}
-   {accountMsg&&<p className={styles.success} role="status">{accountMsg}</p>}
-   {accountErr&&<p className={styles.error} role="alert">{accountErr}</p>}
-   <p className={styles.hint}>Email verification may still be required by Supabase when converting a temporary QR session to a recoverable account. This protects account ownership.</p>
-  </section>
+
  </section>;
 }

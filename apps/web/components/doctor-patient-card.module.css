@@ -1,0 +1,32 @@
+.list {
+  list-style: none;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  padding: 0;
+  margin: 16px 0 0;
+  gap: 12px;
+}
+.card {
+  display: block;
+  min-width: 0;
+  border: 1px solid #d8e2ef;
+  border-radius: 14px;
+  padding: clamp(14px, 3vw, 22px);
+  background: #f8fafc;
+}
+.identity { min-width: 0; }
+.identity strong { display: block; font-size: 18px; }
+.identity p { margin: 4px 0; }
+.status { font-size: 13px; color: #4c5a69; font-weight: 750; }
+.actions {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 11rem), 1fr));
+  gap: 10px;
+  margin-top: 15px;
+}
+.actions a {
+  min-height: 44px;
+  min-width: 0;
+  padding: 9px 14px;
+  overflow-wrap: normal;
+}

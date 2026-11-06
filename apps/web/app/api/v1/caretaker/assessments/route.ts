@@ -39,12 +39,11 @@ export async function GET(request:Request){try{
   notifications?client.rpc('smriti_command',{operation:'workspace',input:{patient_id:patient.id}}):Promise.resolve({data:null,error:null}),
   notifications&&!user.is_anonymous?client.rpc('smriti_has_login_password'):Promise.resolve({data:false,error:null})
  ]);
- if(activities.error)throw activities.error;
- if(!notifications)return json({assignments:activities.data||[]});
+ if(!notifications){if(activities.error)throw activities.error;return json({assignments:activities.data||[]});}
  const reminders=[];
  if(user.is_anonymous||password.data===false)reminders.push({id:'credentials',title:'Finish setting up your login',href:'/profile#login-details',detail:user.is_anonymous?'Verify an email and set a password.':'Set a password for your verified email.'});
  const consent=workspace.data?.consents||[];
  if(!workspace.error&&!consent.some((c:{purpose:string;active:boolean})=>c.purpose==='clinician_sharing'&&c.active))
   reminders.push({id:'sharing',title:'Review doctor sharing',href:'/permissions?patient='+patient.id,detail:'Choose whether your doctor can assign activities and review responses.'});
- return json({assignments:(activities.data||[]).filter((a:{status:string})=>a.status==='assigned').map(({id,status,instrument_code,due_date}:{id:string;status:string;instrument_code:string;due_date:string|null})=>({id,status,instrument_code,due_date})),reminders});
+ return json({activitiesUnavailable:!!activities.error,assignments:(activities.data||[]).filter((a:{status:string})=>a.status==='assigned').map(({id,status,instrument_code,due_date}:{id:string;status:string;instrument_code:string;due_date:string|null})=>({id,status,instrument_code,due_date})),reminders});
 }catch(e){return failure(e);}}

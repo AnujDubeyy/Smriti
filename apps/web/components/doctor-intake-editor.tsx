@@ -13,8 +13,8 @@ const base:Medical={
  blood_group:'unknown',diagnoses:['under_evaluation'],diagnosis_status:'under_evaluation',
  dementia_stage:'not_assessed',daily_support:'unknown',communication_support:[],other_condition:''
 };
-export function DoctorIntakeEditor({patientId,initial}:{
- patientId:string;initial:Partial<Medical>|null
+export function DoctorIntakeEditor({patientId,initial,preview=false}:{
+ patientId:string;initial:Partial<Medical>|null;preview?:boolean
 }){
  const [data,setData]=useState<Medical>({...base,...initial,
   diagnoses:initial?.diagnoses?.length?initial.diagnoses:['under_evaluation'],
@@ -23,7 +23,16 @@ export function DoctorIntakeEditor({patientId,initial}:{
  const [busy,setBusy]=useState(false);
  const [message,setMessage]=useState('');
  const [error,setError]=useState('');
- const hasIntake=!!initial?.diagnoses?.length;
+ const [hasIntake,setHasIntake]=useState(!!initial?.diagnoses?.length);
+ function toggleEditor(){
+  if(preview&&!open){
+   try{
+    const saved=sessionStorage.getItem('smriti-demo-intake:'+patientId);
+    if(saved){setData(JSON.parse(saved));setHasIntake(true);}
+   }catch{/* The preview also works without browser storage. */}
+  }
+  setOpen(value=>!value);
+ }
  const dementia=data.diagnosis_status==='confirmed_by_clinician'&&
   data.diagnoses.some(x=>(dementiaDiagnoses as readonly string[]).includes(x));
  const set=(key:keyof Medical,value:string|string[])=>setData(v=>({...v,[key]:value}));
@@ -41,19 +50,23 @@ export function DoctorIntakeEditor({patientId,initial}:{
  async function save(e:React.FormEvent<HTMLFormElement>){
   e.preventDefault();if(busy)return;setBusy(true);setError('');setMessage('');
   try{
+   if(preview){
+    sessionStorage.setItem('smriti-demo-intake:'+patientId,JSON.stringify(data));
+    setHasIntake(true);setMessage('Demo clinical intake saved in this tab.');return;
+   }
    const r=await fetch('/api/v1/care/doctor-intake',{method:'PATCH',headers:{'Content-Type':'application/json'},
     body:JSON.stringify({patient_id:patientId,clinical_intake:data}),cache:'no-store'});
    const j=await r.json().catch(()=>({error:'temporarily_unavailable'}));
    if(!r.ok)throw new Error(j.error||'temporarily_unavailable');
-   setMessage('Clinical intake saved for this existing patient.');
+   setHasIntake(true);setMessage('Clinical intake saved for this existing patient.');
   }catch(e){const reason=e instanceof Error?e.message:'';
    setError(reason==='forbidden'?'This doctor no longer has authority to edit the intake.':'Could not save. Check the selected diagnosis and stage.');
   }finally{setBusy(false);}
  }
  return <div className={styles.editor}>
-  <button type="button" className={styles.toggle} onClick={()=>setOpen(!open)}
-   aria-expanded={open}>{open?'Close clinical intake':hasIntake?'Edit clinical intake':'Complete clinical intake'} <span aria-hidden="true">{open?'−':'+'}</span></button>
-  {open?<form onSubmit={save} className={styles.form}>
+  <button type="button" className={styles.toggle} onClick={toggleEditor}
+   aria-controls={'intake-'+patientId} aria-expanded={open}><b>{open?'Close clinical intake':hasIntake?'Edit clinical intake':'Complete clinical intake'}</b><span aria-hidden="true">{open?'−':'+'}</span></button>
+  {open?<form id={'intake-'+patientId} onSubmit={save} className={styles.form}>
    <p className={styles.help}>Update clinician-entered details without creating another patient or QR. Fictional test data only.</p>
    <label>Blood group<select value={data.blood_group} onChange={e=>set('blood_group',e.target.value)}>
     {bloodGroups.map(x=><option key={x} value={x}>{x==='unknown'?'Unknown / not recorded':x}</option>)}
