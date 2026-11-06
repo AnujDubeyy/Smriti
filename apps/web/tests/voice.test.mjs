@@ -2,6 +2,7 @@ import {test} from 'node:test';import assert from 'node:assert/strict';
 import {encodeWav,inspectWav} from '../lib/voice/audio.ts';
 import {transcribe,synthesize} from '../lib/voice/gnani.ts';
 import {countAnimals} from '../lib/voice/groq.ts';
+import {transcribeAssessment} from '../lib/voice/assessment-transcription.ts';
 import {gemini,validateEvidence,asksToStop,mockAI,itemSchema} from '../lib/voice/ai.ts';
 const signal=new AbortController().signal;const wav=encodeWav(new Float32Array(16000).fill(.2),16000);
 const input={mode:'log_analysis',locale:'en-IN',text:'Summarize',approved_context:[],logs:[{id:'00000000-0000-4000-8000-000000000001',text:'Caregiver reports a quiet afternoon.',recorded_at:'2026-11-02T12:00:00+00:00'}],history:[]};
@@ -35,3 +36,6 @@ test('Groq model errors are reported separately from provider outages',async()=>
 
 test('animal counter uses the first Groq model and returns distinct transcript animals for caregiver review',async()=>{const result=await countAnimals('गाय, कुत्ता, and गाय','hi-IN','test-key',signal,async(_url,o)=>{const body=JSON.parse(o.body);assert.equal(body.model,'openai/gpt-oss-120b');assert.equal(body.temperature,0);assert.match(body.messages[1].content,/गाय, कुत्ता, and गाय/);assert.match(body.messages[1].content,/hi-IN/);return Response.json({choices:[{finish_reason:'stop',message:{content:JSON.stringify({count:2,animals:['गाय','कुत्ता']})}}]});});assert.deepEqual(result.animals,['गाय','कुत्ता']);assert.equal(result.count,2);});
 test('animal counter rejects a count that does not match its animal list',async()=>{await assert.rejects(countAnimals('cat and dog','en-IN','test-key',signal,async()=>Response.json({choices:[{finish_reason:'stop',message:{content:JSON.stringify({count:5,animals:['cat','dog']})}}]})),/ai_response_invalid/);});
+
+test('assessment transcription automatically falls back from Gnani to Groq',async()=>{let fallbackCalls=0;const result=await transcribeAssessment(new Uint8Array([1]),'mr-IN','gnani-key','groq-key',signal,{gnani:async()=>{throw new Error('stt_unavailable');},groq:async(_audio,locale,key)=>{fallbackCalls++;assert.equal(locale,'mr-IN');assert.equal(key,'groq-key');return{textRaw:'चार प्राणी',provider:'groq',model:'whisper-large-v3-turbo'};}});assert.equal(fallbackCalls,1);assert.equal(result.provider,'groq');assert.equal(result.textRaw,'चार प्राणी');});
+test('assessment transcription does not call fallback when Gnani succeeds',async()=>{let fallbackCalls=0;const result=await transcribeAssessment(new Uint8Array([1]),'hi-IN','gnani-key','groq-key',signal,{gnani:async()=>({textRaw:'तीन जानवर',provider:'gnani',model:'prisma-v3.0'}),groq:async()=>{fallbackCalls++;throw new Error('unexpected_fallback');}});assert.equal(fallbackCalls,0);assert.equal(result.provider,'gnani');});

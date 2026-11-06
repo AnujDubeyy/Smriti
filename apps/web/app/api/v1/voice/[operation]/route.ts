@@ -6,6 +6,7 @@ import {json,sameOrigin,limitedBody} from '../../../../../lib/auth/http';
 import {providerConfig,respond} from '../../../../../lib/voice/server';
 import {groqTranscribe} from '../../../../../lib/voice/groq';
 import {transcribe,synthesize} from '../../../../../lib/voice/gnani';
+import {transcribeAssessment} from '../../../../../lib/voice/assessment-transcription';
 import {asksToStop,itemSchema,supportSchema,type AIInput} from '../../../../../lib/voice/ai';
 import {MAX_AUDIO_BYTES,inspectWav} from '../../../../../lib/voice/audio';
 import {VOICE_LANGUAGE_CODES} from '../../../../../lib/voice/languages';
@@ -23,9 +24,10 @@ export async function POST(request:Request,{params}:{params:Promise<{operation:s
   if(request.headers.get('content-type')!=='audio/wav')throw new CareError('audio_format',415);
   const audio=await readAudio(request);const c=operation==='assessment_transcribe'?null:providerConfig();
   const speechKey=operation==='assessment_transcribe'?process.env.GNANI_API_KEY_ID:c?.speech;
-  if(!speechKey)throw new CareError('voice_not_configured',503);
+  const missingSpeech=operation==='assessment_transcribe'?(!process.env.GNANI_API_KEY_ID&&!process.env.GROQ_API_KEY):!speechKey;
+  if(missingSpeech)throw new CareError('voice_not_configured',503);
   const claim=await rpc('claim',{...ids,hash:createHash('sha256').update(audio).digest('hex')});if(claim.duplicate)throw new CareError('duplicate_turn',409);
-  try{const result=operation==='assessment_transcribe'?await transcribe(audio,claim.locale,speechKey,request.signal):await (c?.speechProvider==='groq'?groqTranscribe:transcribe)(audio,claim.locale,speechKey,request.signal);await rpc('check',ids);return json({...result,turn_id:ids.turn_id,mode:'live'});}
+  try{const result=operation==='assessment_transcribe'?await transcribeAssessment(audio,claim.locale,process.env.GNANI_API_KEY_ID,process.env.GROQ_API_KEY,request.signal):await (c?.speechProvider==='groq'?groqTranscribe:transcribe)(audio,claim.locale,speechKey!,request.signal);await rpc('check',ids);return json({...result,turn_id:ids.turn_id,mode:'live'});}
   catch(e){await rpc('fail',ids).catch(()=>{});throw e;}
  }
  const raw=await limitedBody(request,18000);if(raw===null)throw new CareError('payload_too_large',413);const input=JSON.parse(raw);

@@ -164,7 +164,7 @@ export function AssessmentRecorder({ patientId, locale, preview, maxDurationMs =
           body: encodeWav(chunk, audio.sampleRate) as BodyInit, signal,
         });
         const data = await response.json();
-        if (!response.ok || !data.textRaw?.trim()) throw new Error(data.error === 'voice_not_configured' ? 'Gnani speech recognition is not configured. Type the response below.' : 'Gnani could not transcribe this recording. Replay it and type the words below.');
+        if (!response.ok || !data.textRaw?.trim()) throw new Error(data.error === 'voice_not_configured' ? 'Automatic speech recognition is not configured yet. Your recording is saved on this device.' : 'Automatic transcription could not complete. Your recording is saved on this device; record again or enter the words manually.');
         words.push(data.textRaw.trim());
       }
       return words.join(' ').trim();
@@ -243,14 +243,14 @@ export function AssessmentRecorder({ patientId, locale, preview, maxDurationMs =
             onText(finalText);
             setNotice('Showing the live transcript. Listen back and correct it before saving.');
           } else if (!signal.aborted) {
-            setNotice('No speech was recognized. Replay the recording or type the words below.');
+            setNotice('No speech was recognized automatically. The recording is saved; try again or enter the response manually.');
           }
         } catch (error) {
           if (!signal.aborted) {
             if (finalText) {
               onText(finalText);
               setNotice('Final recognition failed. Showing the live transcript; review it before saving.');
-            } else setNotice(error instanceof Error ? error.message : 'Gnani transcription failed. Replay the recording or type the words below.');
+            } else setNotice(error instanceof Error ? error.message : 'Automatic transcription failed. Try recording again or enter the words manually.');
           }
         }
         try {
@@ -278,10 +278,10 @@ export function AssessmentRecorder({ patientId, locale, preview, maxDurationMs =
     }
   }
 
-  const status = state === 'recording' ? 'Recording · tap stop when finished' : state === 'starting' ? 'Requesting microphone access…' : state === 'transcribing' ? 'Finalizing transcript with Gnani…' : '';
+  const status = state === 'recording' ? 'Recording · tap stop when finished' : state === 'starting' ? 'Requesting microphone access…' : state === 'transcribing' ? 'Recognizing speech automatically…' : '';
   return <div className={styles.root}>
     <div className={styles.controlRow}>
-      <div className={styles.recordStatus} aria-live="polite"><span className={state === 'recording' ? styles.liveDot : styles.idleDot} /><div><strong>{state === 'recording' ? 'Listening…' : state === 'transcribing' ? 'Preparing transcript…' : 'Ready to record'}</strong><span>{state === 'recording' ? 'The patient can speak now.' : state === 'transcribing' ? 'Gnani is finalizing the transcript.' : 'Speech is processed with Gnani.'}</span></div></div>
+      <div className={styles.recordStatus} aria-live="polite"><span className={state === 'recording' ? styles.liveDot : styles.idleDot} /><div><strong>{state === 'recording' ? 'Listening…' : state === 'transcribing' ? 'Preparing transcript…' : 'Ready to record'}</strong><span>{state === 'recording' ? 'The patient can speak now.' : state === 'transcribing' ? 'Gnani first, with automatic Groq fallback.' : 'Speech is transcribed automatically.'}</span></div></div>
       <button type="button" className={state === 'recording' ? styles.stop : styles.record} aria-label={state === 'recording' ? 'Stop recording and transcribe' : 'Record spoken answer'} aria-pressed={state === 'recording'} disabled={state === 'starting' || state === 'transcribing'} onClick={() => state === 'recording' ? stopCapture() : void start()}>
         <MicrophoneIcon stop={state === 'recording'} /><span>{state === 'recording' ? 'Stop' : 'Record answer'}</span>
       </button>
