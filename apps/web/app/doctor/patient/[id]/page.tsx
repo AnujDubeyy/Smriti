@@ -1,5 +1,4 @@
 import {localDoctorPreview,demoPatients} from '../../../../lib/local-doctor-preview';
-import Link from 'next/link';
 import {notFound,redirect} from 'next/navigation';
 import {z} from 'zod';
 import {authenticatedClient} from '../../../../lib/auth/access';
@@ -19,7 +18,6 @@ export default async function DoctorPatient({params}:{params:Promise<{id:string}
  if(doctor?.onboarding_role!=='doctor')redirect('/');
  if(membership?.role!=='clinician'||membership.status!=='active'||!patient?.synthetic)notFound();
  return <section className="doctor-patient">
-  <p><Link href="/doctor">← Back to patients</Link></p>
   <div className="doctor-workspace-shortcuts">
    <Link className="button secondary" href={'/doctor/assessments?patient='+id}>Assign assessment</Link>
    <Link className="button secondary" href={'/doctor/monitoring'}>Monitoring</Link>
