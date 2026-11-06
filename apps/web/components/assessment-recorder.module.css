@@ -1,0 +1,19 @@
+.root{display:grid;gap:10px;min-width:0}
+.controlRow{display:flex;justify-content:space-between;align-items:center;gap:12px}
+.recordStatus{display:flex;align-items:center;gap:10px;min-width:0}
+.recordStatus>div{display:grid;gap:1px;min-width:0}
+.recordStatus strong{font-size:16px;line-height:1.35}
+.recordStatus>div>span{font-size:13px;line-height:1.4;color:#5d5f64}
+.liveDot,.idleDot{width:10px;height:10px;border-radius:50%;flex:none;background:#d82832}
+.liveDot{box-shadow:0 0 0 4px #fff0f0;animation:record-pulse 1.5s ease-in-out infinite}
+.idleDot{background:#a8a49c}
+@keyframes record-pulse{50%{box-shadow:0 0 0 7px rgb(216 40 50 / .08)}}
+.record,.stop{display:inline-flex;align-items:center;justify-content:center;gap:8px;flex:none;min-width:48px;min-height:48px;padding:9px 13px;border:1px solid #d82832;border-radius:12px;background:#d82832;color:white;font:inherit;font-size:15px;font-weight:800}
+.stop{background:#fff0f0;color:#a8212a}
+.record:disabled,.stop:disabled{opacity:.55}
+.stateMessage,.notice{font-size:14px;line-height:1.45;color:#5d5f64}
+.notice{padding:9px 11px;border-radius:10px;background:#fff;border:1px solid #e6e4e0}
+.playback{display:grid;gap:5px;padding-top:9px;border-top:1px solid #e6e4e0;font-size:14px;font-weight:750}
+.playback audio{display:block;width:100%;height:42px;margin:0}
+@media(max-width:420px){.controlRow{align-items:flex-start;flex-direction:column}.record,.stop{width:100%}}
+@media(prefers-reduced-motion:reduce){.liveDot{animation:none}}

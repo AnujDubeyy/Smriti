@@ -5,6 +5,7 @@ import Link from 'next/link';
 import {useDemoCare,updateDemoCare,demoId} from '../lib/demo-care-store';
 import {activityCatalog,type Assignment,type ActivityCode} from '../lib/assessment-activities';
 import {AssessmentResult} from './assessment-result';
+import {DoctorRecordingImport} from './doctor-recording-import';
 import styles from './doctor-assessments.module.css';
 type Patient={patient_id:string;patient_name:string;caretaker_name:string;status:string;sharing_enabled:boolean};
 export function DoctorAssessmentManager({patients,initialPatient,localPreview=false}:{patients:Patient[];initialPatient?:string;localPreview?:boolean}){
@@ -75,6 +76,7 @@ export function DoctorAssessmentManager({patients,initialPatient,localPreview=fa
    <h1>Assign an assessment</h1>
    <p>Choose a connected patient and an spoken activity. Review the answer and activity count here after the caretaker submits it.</p>
   </div>
+  <DoctorRecordingImport/>
   {!patients.length?<div className={styles.card}>
    <h2>No patients yet</h2><p>Create a fictional patient profile and invite the caretaker first.</p>
    <Link href="/doctor" className={styles.link}>Create patient profile</Link>

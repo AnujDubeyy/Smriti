@@ -188,7 +188,7 @@ export function AppShell({children,localPreview=false}:{children:React.ReactNode
     </div>:null}
     <main id="main" tabIndex={-1}>
      {localPreview&&!entry?<div className="preview-switch"><span>Demo workspace</span><div><Link href="/doctor" aria-current={doctor?'page':undefined}>Doctor view</Link><Link href="/" aria-current={!doctor?'page':undefined}>Patient view</Link></div></div>:null}
-     {path!=='/join'&&path!=='/'&&path!=='/doctor'?<nav className="page-breadcrumb" aria-label="Page navigation"><Link href={entry?'/login':doctor?'/doctor':'/'}>← {entry?'Back to sign in':doctor?'Back to patients':'Back to home'}</Link>{!entry?<Link href={doctor?'/doctor/assessments':'/assessment'}>Assessments</Link>:null}{!entry?<Link href={doctor?'/doctor/monitoring':'/monitoring'}>Monitoring</Link>:null}</nav>:null}
+     {path!=='/join'&&path!=='/'&&path!=='/doctor'&&path!=='/assessment'?<nav className="page-breadcrumb" aria-label="Page navigation"><Link href={entry?'/login':doctor?'/doctor':'/'}>← {entry?'Back to sign in':doctor?'Back to patients':'Back to home'}</Link>{!entry?<Link href={doctor?'/doctor/assessments':'/assessment'}>Assessments</Link>:null}{!entry?<Link href={doctor?'/doctor/monitoring':'/monitoring'}>Monitoring</Link>:null}</nav>:null}
      <div className="route-content" key={path}>{children}</div></main>
     {!entry?<PwaControls/>:null}
    </div>
