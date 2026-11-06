@@ -237,3 +237,13 @@
 @media(min-width:1024px){
  .smriti-desktop-navigation .smriti-doctor-nav-icon{width:34px;height:34px}
 }
+
+/* Smriti supporting illustrations: separate from canonical logo and Nani artwork. */
+.smriti-art{display:inline-block;flex:none;object-fit:contain;max-width:100%;height:auto}
+.care-home-tile .smriti-art{width:4rem;height:4rem;transition:transform .18s ease}
+.care-home-tile:hover .smriti-art{transform:translateY(-3px) rotate(-2deg)}
+.smriti-patient-identity{display:inline-flex;align-items:center;gap:.7rem;flex-wrap:wrap}
+.smriti-empty-art{display:flex;align-items:center;flex-direction:column;gap:.75rem;text-align:center;padding:1rem}
+.smriti-empty-art p{max-width:34ch}
+.state-panel>.smriti-art{margin-bottom:.6rem}
+@media (prefers-reduced-motion:reduce){.care-home-tile .smriti-art{transition:none}.care-home-tile:hover .smriti-art{transform:none}}
