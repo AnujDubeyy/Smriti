@@ -19,13 +19,14 @@ type Props = {
   patientId: string;
   locale: string;
   preview: boolean;
+  maxDurationMs?: number;
   onText: (text: string) => void;
   onRecording: (recording: { audio: Blob; durationMs: number; mimeType: string; transcript: string; segments: TranscriptSegment[] }) => Promise<void>;
   onBusy: (value: boolean) => void;
   onState: (value: RecorderState) => void;
 };
 
-export function AssessmentRecorder({ patientId, locale, preview, onText, onRecording, onBusy, onState }: Props) {
+export function AssessmentRecorder({ patientId, locale, preview, maxDurationMs = 65000, onText, onRecording, onBusy, onState }: Props) {
   const [state, setState] = useState<RecorderState>('idle');
   const [notice, setNotice] = useState('');
   const [playback, setPlayback] = useState('');
@@ -172,6 +173,13 @@ export function AssessmentRecorder({ patientId, locale, preview, onText, onRecor
     }
   }
 
+  function stopCapture() {
+    if (recording.current?.state !== 'recording') return;
+    clearTimeout(timer.current);
+    updateState('transcribing');
+    recording.current.stop();
+  }
+
   async function start() {
     const controller = new AbortController();
     lifecycle.current = controller;
@@ -258,7 +266,7 @@ export function AssessmentRecorder({ patientId, locale, preview, onText, onRecor
       recordingStartedAt.current = Date.now();
       recordingStartedPerf.current = performance.now();
       updateState('recording');
-      timer.current = setTimeout(() => { if (recorder.state === 'recording') recorder.stop(); }, 65000);
+      timer.current = setTimeout(stopCapture, maxDurationMs);
     } catch (error) {
       stopStreaming();
       microphone.current?.getTracks().forEach(track => track.stop());
@@ -274,7 +282,7 @@ export function AssessmentRecorder({ patientId, locale, preview, onText, onRecor
   return <div className={styles.root}>
     <div className={styles.controlRow}>
       <div className={styles.recordStatus} aria-live="polite"><span className={state === 'recording' ? styles.liveDot : styles.idleDot} /><div><strong>{state === 'recording' ? 'Listening…' : state === 'transcribing' ? 'Preparing transcript…' : 'Ready to record'}</strong><span>{state === 'recording' ? 'The patient can speak now.' : state === 'transcribing' ? 'Gnani is finalizing the transcript.' : 'Speech is processed with Gnani.'}</span></div></div>
-      <button type="button" className={state === 'recording' ? styles.stop : styles.record} aria-label={state === 'recording' ? 'Stop recording and transcribe' : 'Record spoken answer'} aria-pressed={state === 'recording'} disabled={state === 'starting' || state === 'transcribing'} onClick={() => state === 'recording' ? recording.current?.stop() : void start()}>
+      <button type="button" className={state === 'recording' ? styles.stop : styles.record} aria-label={state === 'recording' ? 'Stop recording and transcribe' : 'Record spoken answer'} aria-pressed={state === 'recording'} disabled={state === 'starting' || state === 'transcribing'} onClick={() => state === 'recording' ? stopCapture() : void start()}>
         <MicrophoneIcon stop={state === 'recording'} /><span>{state === 'recording' ? 'Stop' : 'Record answer'}</span>
       </button>
     </div>
