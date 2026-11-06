@@ -307,7 +307,7 @@ export function VoiceStudio({patientId}:{patientId?:string;demo?:boolean}){
   </header>
   <div className={styles.stage} data-stage={stage}>
    <div className={styles.stageSpark} aria-hidden="true"><i/><i/><i/></div>
-   <div className={styles.clock}>{inCall&&<span className={styles.liveDot}/ >}{inCall?clockText:'A familiar voice, whenever you need one'}</div>
+   <div className={styles.clock}>{inCall&&<span className={styles.liveDot} />}{inCall?clockText:'A familiar voice, whenever you need one'}</div>
    <div className={styles.hero}>
     <div className={styles.waveform} data-active={stage==='listening'||stage==='hearing'||stage==='speaking'} aria-hidden="true">
      <i/><i/><i/><i/><i/><i/><i/><i/><i/><i/><i/><i/><i/>
@@ -350,5 +350,5 @@ export function VoiceStudio({patientId}:{patientId?:string;demo?:boolean}){
   </div>
   {showCaptions&&<div className={styles.captions} role="log">{captions.length?captions.map((entry,i)=><div className={entry.speaker==='smriti'?styles.smritiLine:styles.patientLine} key={entry.time+i}><strong>{entry.speaker==='smriti'?'Smriti':'You'}</strong><p lang={language}>{entry.text}</p></div>):<div className={styles.emptyCaptions}><SmritiArt name="empty-recordings" size={90}/><p>Your conversation will appear here.</p></div>}</div>}
   <p className={styles.small}>Conversations are not medical diagnoses.</p>
- </section>;;
+ </section>;
 }
