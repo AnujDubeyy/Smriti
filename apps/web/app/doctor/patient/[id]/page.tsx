@@ -1,4 +1,5 @@
 import {localDoctorPreview,demoPatients} from '../../../../lib/local-doctor-preview';
+import Link from 'next/link';
 import {notFound,redirect} from 'next/navigation';
 import {z} from 'zod';
 import {authenticatedClient} from '../../../../lib/auth/access';
