@@ -1,8 +1,10 @@
 'use client';
+import {DayFirstDate,displayDate} from './day-first-date';
 import {useEffect,useState} from 'react';
 import Link from 'next/link';
 import {useDemoCare,updateDemoCare,demoId} from '../lib/demo-care-store';
 import {activityCatalog,type Assignment,type ActivityCode} from '../lib/assessment-activities';
+import {AssessmentResult} from './assessment-result';
 import styles from './doctor-assessments.module.css';
 type Patient={patient_id:string;patient_name:string;caretaker_name:string;status:string;sharing_enabled:boolean};
 export function DoctorAssessmentManager({patients,initialPatient,localPreview=false}:{patients:Patient[];initialPatient?:string;localPreview?:boolean}){
@@ -28,13 +30,17 @@ export function DoctorAssessmentManager({patients,initialPatient,localPreview=fa
   const controller=new AbortController();
   const id=current.patient_id;
   setLoading(true);
-  load(id,controller.signal).then(r=>setAssignments(r)).catch(e=>{
+  const refresh=()=>load(id,controller.signal).then(r=>{if(!controller.signal.aborted){setAssignments(r);setError('');}}).catch(e=>{
    if(controller.signal.aborted)return;
-   setError(e instanceof Error&&e.message==='sharing_required'
+   setAssignments([]);setError(e instanceof Error&&e.message==='sharing_required'
     ?'The caretaker must enable doctor sharing before assignments can be viewed.'
     :'Unable to load assignments. Try selecting the patient again.');
   }).finally(()=>{if(!controller.signal.aborted)setLoading(false);});
-  return()=>controller.abort();
+  void refresh();
+  const onFocus=()=>{if(!document.hidden)void refresh();};
+  window.addEventListener('focus',onFocus);
+  const interval=setInterval(onFocus,15000);
+  return()=>{controller.abort();clearInterval(interval);window.removeEventListener('focus',onFocus);};
  },[selected,current?.sharing_enabled,current?.status,localPreview]);
  async function assign(code:ActivityCode){
   if(!selected||busy||!current?.sharing_enabled)return;
@@ -67,7 +73,7 @@ export function DoctorAssessmentManager({patients,initialPatient,localPreview=fa
   <div className={styles.head}>
    <span className={styles.eyebrow}>DOCTOR · ASSESSMENTS</span>
    <h1>Assign an assessment</h1>
-   <p>Choose a connected patient and an original spoken activity. The caretaker helps the patient complete it and records the response.</p>
+   <p>Choose a connected patient and an spoken activity. Review the answer and activity count here after the caretaker submits it.</p>
   </div>
   {!patients.length?<div className={styles.card}>
    <h2>No patients yet</h2><p>Create a fictional patient profile and invite the caretaker first.</p>
@@ -75,7 +81,7 @@ export function DoctorAssessmentManager({patients,initialPatient,localPreview=fa
   </div>:<>
    <div className={styles.card}>
     <label className={styles.label}>Patient
-     <select value={selected} onChange={e=>{setSelected(e.target.value);setAssignments([]);setError('');setMessage('');}}>
+     <select disabled={busy} value={selected} onChange={e=>{setSelected(e.target.value);setAssignments([]);setError('');setMessage('');}}>
       {patients.map(p=><option key={p.patient_id} value={p.patient_id}>{p.patient_name} · {p.caretaker_name}</option>)}
      </select>
     </label>
@@ -86,7 +92,7 @@ export function DoctorAssessmentManager({patients,initialPatient,localPreview=fa
      :'Caretaker connected · Doctor sharing enabled'}</p>:null}
     {current&&!current.sharing_enabled?<p className={styles.warning}>Ask the caretaker to open Profile → Care permissions → “Share monitoring with connected doctor.” Smriti requires their consent before clinical assignments or records are shared.</p>:null}
     <label className={styles.label}>Due date <span className={styles.optional}>(optional)</span>
-     <input type="date" value={dueDate} min={new Date().toISOString().slice(0,10)} onChange={e=>setDueDate(e.target.value)}/>
+     <DayFirstDate value={dueDate} min={new Date().toISOString().slice(0,10)} onChange={setDueDate}/>
     </label>
    </div>
    {current?.sharing_enabled&&current.status==='joined'?<>
@@ -97,7 +103,7 @@ export function DoctorAssessmentManager({patients,initialPatient,localPreview=fa
       return <article key={activity.code} className={styles.activity}>
        <div className={styles.activityTop}><strong>{activity.title}</strong><span>{activity.duration}</span></div>
        <p>{activity.description}</p>
-       <button type="button" disabled={busy||loading||awaiting}
+       <button type="button" disabled={busy||loading||awaiting||dueDate==='invalid'}
         onClick={()=>void assign(activity.code)}>{awaiting?'Already assigned':busy?'Assigning…':'Assign to patient'}</button>
       </article>;
      })}
@@ -108,7 +114,7 @@ export function DoctorAssessmentManager({patients,initialPatient,localPreview=fa
       {assignments.map(a=>{
        const title=activityCatalog.find(item=>item.code===a.instrument_code)?.title||'Activity';
        return <li key={a.id}><strong>{title}</strong><span>{a.status==='submitted'?'Response submitted':a.status==='assigned'?'Awaiting response':a.status}</span>
-        {a.due_date?<small>Due {a.due_date}</small>:null}</li>;
+        {a.due_date?<small>Due {displayDate(a.due_date)}</small>:null}<AssessmentResult assignment={a}/></li>;
       })}
      </ul>:<p>No activities have been assigned to this patient.</p>}
     </div>

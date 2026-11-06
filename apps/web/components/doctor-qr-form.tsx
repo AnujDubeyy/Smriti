@@ -1,4 +1,5 @@
 'use client';
+import {DayFirstDate} from './day-first-date';
 import {useState} from 'react';
 import {InvitationQr} from './invitation-qr';
 import {
@@ -9,7 +10,7 @@ import styles from './doctor-qr-form.module.css';
 
 const defaults:DoctorIntake={
  patient_name:'',caretaker_name:'',relationship:'daughter',relationship_other:'',
- date_of_birth:'',sex:'prefer_not_to_say',family_count:0,locale:'hi-IN',
+ date_of_birth:'',sex:'prefer_not_to_say',family_count:0,locale:'en-IN',
  blood_group:'unknown',diagnoses:['under_evaluation'],diagnosis_status:'under_evaluation',
  dementia_stage:'not_assessed',daily_support:'unknown',communication_support:[],other_condition:''
 };
@@ -102,19 +103,16 @@ export function DoctorQrForm({existingCount=0}:{existingCount?:number}){
    <fieldset className={styles.fieldset}>
     <legend>1. Caretaker & relationship</legend>
     <label>Caretaker name<input required minLength={2} maxLength={120} value={data.caretaker_name} onChange={e=>set('caretaker_name',e.target.value)} placeholder="Caretaker name"/></label>
-    <span className={styles.fieldLabel}>Relationship to the patient</span>
-    <div className={styles.pillScroller} role="group" aria-label="Caretaker relationship">
-     {relationshipOptions.map(([id,label])=><button key={id} type="button" aria-pressed={data.relationship===id}
-      className={data.relationship===id?styles.selectedPill:styles.pill}
-      onClick={()=>set('relationship',id)}>{label}</button>)}
-    </div>
+    <label>Relationship to patient<select value={data.relationship} onChange={e=>set('relationship',e.target.value)}>
+     {relationshipOptions.filter(([id])=>id!=='no_blood_relation').map(([id,label])=><option key={id} value={id}>{id==='other'?'Other (please specify)':label}</option>)}
+    </select></label>
     {data.relationship==='other'?<label>Specify relationship<input required maxLength={100} value={data.relationship_other} onChange={e=>set('relationship_other',e.target.value)} placeholder="Describe the relationship"/></label>:null}
    </fieldset>
    <fieldset className={styles.fieldset}>
     <legend>2. Patient details</legend>
     <label>Patient name<input required minLength={2} maxLength={120} value={data.patient_name} onChange={e=>set('patient_name',e.target.value)} placeholder="Patient preferred name"/></label>
     <div className={styles.grid}>
-     <label>Date of birth<input required type="date" value={data.date_of_birth} max={new Date().toISOString().slice(0,10)} onChange={e=>set('date_of_birth',e.target.value)}/></label>
+     <label>Date of birth<DayFirstDate required value={data.date_of_birth} max={new Date().toISOString().slice(0,10)} onChange={v=>set('date_of_birth',v)}/></label>
      <label>Family members<input required type="number" min={0} max={50} value={data.family_count??0} onChange={e=>set('family_count',Number(e.target.value))}/></label>
      <label>Sex<select value={data.sex} onChange={e=>set('sex',e.target.value)}>
       <option value="prefer_not_to_say">Prefer not to say</option><option value="female">Female</option><option value="male">Male</option><option value="intersex">Intersex</option></select></label>
@@ -160,7 +158,7 @@ export function DoctorQrForm({existingCount=0}:{existingCount?:number}){
      </label>)}
     </div>
    </fieldset>
-   <p className={styles.notice}>Fictional test profiles only. Blood group stays in the care record; it is not sent to Smriti’s conversation model. Conversation personalization requires caretaker consent and does not produce a diagnosis or severity score.</p>
+
    {error?<p role="alert" className={styles.error}>{error}</p>:null}
    <button type="submit" disabled={busy} className={styles.submit}>{busy?'Creating…':'Create patient & QR invitation'}</button>
   </form>

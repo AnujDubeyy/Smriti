@@ -46,7 +46,7 @@ function CareNav({mode,expanded=false,doctor=false}:{mode:'desktop'|'mobile';exp
     aria-current={isDoctorSectionActive(path,section.href)?'page':undefined}
     className={'smriti-nav-item smriti-doctor-item '+section.icon+
      (isDoctorSectionActive(path,section.href)?' is-active':'')}>
-    <span aria-hidden="true" className="smriti-doctor-nav-icon">{section.icon==='patients'?'♙':section.icon==='assessments'?'✓':section.icon==='monitoring'?'▥':'◌'}</span>
+    <span aria-hidden="true" className="smriti-doctor-nav-icon"><svg viewBox="0 0 24 24" width="23" height="23" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d={section.icon==='patients'?'M16 21v-2a5 5 0 0 0-10 0v2 M15 7a4 4 0 1 1-8 0 4 4 0 1 1 8 0':section.icon==='assessments'?'M8 5H5v16h14V5h-3 M9 3h6v4H9z M8 14l3 3 5-6':section.icon==='monitoring'?'M3 19h18 M4 14l5-6 4 4 7-8':'M3 4h18v12H9l-6 5z'}/></svg></span>
     <span className="smriti-nav-label" aria-hidden={mode==='desktop'&&!expanded}>{section.label}</span>
    </Link>):pillars.map((pillar,index)=>{
    const active=isPillarActive(path,pillar);
@@ -89,7 +89,7 @@ export function AppShell({children,localPreview=false}:{children:React.ReactNode
  useEffect(()=>{
   if(previousPath.current!==path){
    container.current?.querySelector<HTMLElement>('main h1,[data-route-heading]')?.focus();
-   previousPath.current=path;
+   previousPath.current=path;setExpanded(false);
   }
   setAccountOpen(false);
  },[path]);
@@ -188,9 +188,9 @@ export function AppShell({children,localPreview=false}:{children:React.ReactNode
     </div>:null}
     <main id="main" tabIndex={-1}>
      {localPreview?<div className="preview-switch"><span>Demo workspace</span><div><Link href="/doctor" aria-current={doctor?'page':undefined}>Doctor view</Link><Link href="/" aria-current={!doctor?'page':undefined}>Patient view</Link></div></div>:null}
-     {path!=='/'&&path!=='/doctor'?<nav className="page-breadcrumb" aria-label="Page navigation"><Link href={entry?'/login':doctor?'/doctor':'/'}>← {entry?'Back to sign in':doctor?'Back to patients':'Back to home'}</Link>{!entry?<Link href={doctor?'/doctor/assessments':'/assessment'}>Assessments</Link>:null}{!entry?<Link href={doctor?'/doctor/monitoring':'/monitoring'}>Monitoring</Link>:null}</nav>:null}
+     {path!=='/join'&&path!=='/'&&path!=='/doctor'?<nav className="page-breadcrumb" aria-label="Page navigation"><Link href={entry?'/login':doctor?'/doctor':'/'}>← {entry?'Back to sign in':doctor?'Back to patients':'Back to home'}</Link>{!entry?<Link href={doctor?'/doctor/assessments':'/assessment'}>Assessments</Link>:null}{!entry?<Link href={doctor?'/doctor/monitoring':'/monitoring'}>Monitoring</Link>:null}</nav>:null}
      <div className="route-content" key={path}>{children}</div></main>
-    {!entry?<footer className="app-footer"><PwaControls/></footer>:null}
+    {!entry?<PwaControls/>:null}
    </div>
   </div>
   {showNav?<CareNav mode="mobile" doctor={doctor}/>:null}

@@ -18,13 +18,13 @@ export default async function Profile(){
   <p><Link className="button secondary" href="/onboarding">Edit doctor details</Link></p>
   <ProfileEditor isAnonymous={!!user!.is_anonymous} email={user!.email} role="doctor"/>
  </section>;
- const {data:patient,error:patientError}=await client.from('patients')
+ const [{data:patient,error:patientError},{data:hasPassword}]=await Promise.all([client.from('patients')
   .select('id,preferred_name,care_details').eq('linked_user_id',user!.id).eq('synthetic',true)
-  .order('created_at').limit(1).maybeSingle();
+  .order('created_at').limit(1).maybeSingle(),client.rpc('smriti_has_login_password')]);
  if(patientError||!patient)return <section><h1>No connected profile</h1><p>Ask your doctor to share a caretaker QR invitation.</p></section>;
  const d=(patient.care_details||{}) as Record<string,unknown>;
  const normalized=normalizeCaregiverRelationship(d.relationship,d.relationship_other);
- return <ProfileEditor role="caregiver" patientId={patient.id} email={user!.email}
+ return <ProfileEditor hasPassword={hasPassword===true} pendingEmail={user!.new_email} role="caregiver" patientId={patient.id} email={user!.email}
   isAnonymous={!!user!.is_anonymous}
   initial={{
    patient_name:patient.preferred_name,caretaker_name:String(d.caregiver_name||account.display_name||''),

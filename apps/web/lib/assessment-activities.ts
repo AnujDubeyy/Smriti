@@ -13,7 +13,7 @@ export function isActivityCode(value:string):value is ActivityCode{
 }
 export type Assignment={
  id:string;instrument_code:string;status:string;due_date:string|null;
- created_at:string;submitted_at?:string|null
+ created_at:string;submitted_at?:string|null;response_text?:string;caregiver_observation?:string;task_score?:number|null
 };
 export type ActivityLocale='en-IN'|'hi-IN'|'mr-IN';
 export function activityPrompt(code:ActivityCode,locale:string):string{
@@ -36,4 +36,13 @@ export function activityPrompt(code:ActivityCode,locale:string):string{
  };
  const lang:ActivityLocale=locale==='hi-IN'||locale==='mr-IN'?locale:'en-IN';
  return prompts[code][lang];
+}
+
+export function wordMatches(text:string,locale:string){
+ const targets=locale==='hi-IN'?['कप','नदी','बगीचा','कुर्सी','आम']:locale==='mr-IN'?['कप','नदी','बाग','खुर्ची','आंबा']:['cup','river','garden','chair','mango'];
+ const spoken=new Set(text.normalize('NFC').toLowerCase().split(/[^\p{L}\p{M}]+/u));
+ return targets.filter(word=>spoken.has(word)).length;
+}
+export function resultLabel(code:string){
+ return code==='smriti_word_repeat_v1'?'target words repeated out of 5':code==='smriti_orientation_v1'?'correct answers out of 2':'distinct animals confirmed';
 }

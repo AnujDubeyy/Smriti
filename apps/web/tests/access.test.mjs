@@ -8,11 +8,15 @@ const p1=uid(101),p2=uid(102);
 before(async()=>{
  db=new PGlite();
  await db.exec(`create role anon;create role authenticated;create schema auth;create schema storage;
- create table auth.users(id uuid primary key,email text,email_confirmed_at timestamptz,is_anonymous boolean default false,raw_user_meta_data jsonb default '{}');
+ create table auth.users(id uuid primary key,email text,encrypted_password text,email_confirmed_at timestamptz,is_anonymous boolean default false,raw_user_meta_data jsonb default '{}');
  create function auth.uid() returns uuid language sql stable as $$select nullif(current_setting('request.jwt.claim.sub',true),'')::uuid$$;
  grant usage on schema auth to authenticated;grant execute on function auth.uid() to authenticated;
  create table storage.buckets(id text primary key,name text,public boolean,file_size_limit bigint,allowed_mime_types text[]);
  create table storage.objects(id uuid,name text,bucket_id text);alter table storage.objects enable row level security;
+ -- Baseline assessment tables already exist in the hosted project.
+ create table public.assessment_assignments(id uuid primary key default gen_random_uuid(),patient_id uuid not null,instrument_code text not null,instrument_version text,assigned_by uuid not null,intended_respondent text,due_date date,notes text,status text,created_at timestamptz default now(),updated_at timestamptz default now());
+ create table public.assessment_submissions(id uuid primary key default gen_random_uuid(),assignment_id uuid references public.assessment_assignments,patient_id uuid not null,respondent_user_id uuid not null,responses jsonb,score_result jsonb,status text,created_at timestamptz default now());
+ alter table public.assessment_assignments enable row level security;alter table public.assessment_submissions enable row level security;
  grant usage on schema storage to anon,authenticated;grant select on storage.objects to anon,authenticated;`);
  for(const f of readdirSync('../../supabase/migrations').filter(f=>f.endsWith('.sql')).sort())await db.exec(readFileSync(`../../supabase/migrations/${f}`,'utf8'));
  for(let n=1;n<=6;n++)await db.query(`insert into auth.users(id,email_confirmed_at,raw_user_meta_data,email) values($1,now(),$2,$3)`,[uid(n),JSON.stringify({role:'clinician',clinician_verification_status:'verified'}),`synthetic${n}@example.invalid`]);
@@ -148,6 +152,28 @@ test('doctor QR is single-use and does not bypass caretaker consent',async()=>{
   assert.ok(!Object.hasOwn(afterDoctor.rows[0].items[0],'care_details'));
   assert.equal((await db.query('select smriti_private.has_scope($1,$2) as allowed',[pid,'records:read'])).rows[0].allowed,false,
    'updating a doctor-authored intake must not bypass caretaker clinician-sharing consent');
+  const switchUser=id=>db.query("select set_config('request.jwt.claim.sub',$1,true)",[id]);
+  const activities=async(role,op,input={})=>(await db.query(
+   'select public.smriti_'+role+'_assessments($1,$2::jsonb) as result',[op,JSON.stringify({patient_id:pid,...input})])).rows[0].result;
+  await switchUser(caretaker);
+  await db.query("select smriti_private.command('consent',$1::jsonb)",[JSON.stringify({patient_id:pid,purpose:'clinician_sharing',enabled:true})]);
+  await switchUser(doctor);
+  const assignment=await activities('doctor','assign',{instrument_code:'smriti_word_repeat_v1'});
+  await switchUser(caretaker);
+  await activities('caretaker','submit',{assignment_id:assignment.id,responses:{response_text:'cup river',task_score:2,caregiver_observation:'One repetition'}});
+  const [caretakerResult]=await activities('caretaker','list');
+  await switchUser(doctor);
+  const [doctorResult]=await activities('doctor','list');
+  for(const result of [caretakerResult,doctorResult]){
+   assert.equal(result.response_text,'cup river');
+   assert.equal(result.task_score,2);
+   assert.equal(result.caregiver_observation,'One repetition');
+  }
+  await switchUser(caretaker);
+  await db.query("select smriti_private.command('consent',$1::jsonb)",[JSON.stringify({patient_id:pid,purpose:'clinician_sharing',enabled:false})]);
+  await switchUser(doctor);
+  await assert.rejects(activities('doctor','list'),/sharing_required/);
+
 
 
 

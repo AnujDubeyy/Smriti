@@ -66,6 +66,5 @@ export default async function DoctorWorkspace(){
    <div><strong>Your profile</strong><p>Doctor workspace</p></div>
    <Link className="button secondary" href="/doctor/profile">Profile settings</Link>
   </div>
-  <p className="small">The clinical intake is based on clinician-entered fictional test information. Smriti does not calculate a diagnosis or dementia stage.</p>
  </section>;
 }

@@ -5,7 +5,7 @@ import {PatientAssessments} from '../../components/patient-assessments';
 import type {Assignment} from '../../lib/assessment-activities';
 export const dynamic='force-dynamic';
 export default async function AssessmentPage(){
- if(localDoctorPreview())return <PatientAssessments patientId={demoPatients[0].patient_id} name="Ramesh" locale="hi-IN" initial={[]} localPreview/>;
+ if(localDoctorPreview())return <PatientAssessments patientId={demoPatients[0].patient_id} name="Ramesh" locale="en-IN" initial={[]} localPreview/>;
  const auth=await authenticatedClient();
  if(!auth.client||!auth.user)redirect('/login');
  const [{data:account},{data:patient,error:patientError}]=await Promise.all([

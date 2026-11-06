@@ -26,3 +26,4 @@
 .success,.error{margin-top:15px;padding:13px;border-radius:10px;font-size:14px}
 .success{background:#edf6eb;color:#33532b}.error{background:#fff1ef;color:#922923}
 .back,.link{display:inline-block;margin-top:24px;font-weight:800;font-size:14px;color:#63521d}
+.assigned details{flex-basis:100%;overflow-wrap:anywhere}.assigned summary{cursor:pointer;font-weight:750;padding:6px 0}

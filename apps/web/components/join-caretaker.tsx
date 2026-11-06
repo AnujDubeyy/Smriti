@@ -1,7 +1,6 @@
 'use client';
 import {useEffect,useState} from 'react';
 import {useRouter} from 'next/navigation';
-import Link from 'next/link';
 import styles from './join-caretaker.module.css';
 export function JoinCaretaker(){
  const router=useRouter();
@@ -40,19 +39,16 @@ export function JoinCaretaker(){
  return <section className={styles.shell}>
   <span className={styles.kicker}>SMRITI · CARETAKER INVITATION</span>
   <h1>Welcome to Smriti</h1>
-  <p>Your doctor has created a fictional care profile. Join it to speak with Smriti, add memories and track daily observations.</p>
+  <p>Join the care profile your doctor created for you.</p>
   {!token?<div role="alert" className={styles.error}>No usable QR invitation found. Ask the doctor to share a fresh QR or link.</div>
   :<div className={styles.inner}>
-   <div className={styles.icon} aria-hidden="true">♡</div>
    <h2>Activate your caretaker account</h2>
-   <p>Continue without an email or password. This is a one-time claim and cannot be reused. Set up recovery details from the profile icon afterwards.</p>
+   <p>After joining, add an email and password to access this profile on another device.</p>
    <label className={styles.agree}><input type="checkbox" checked={authorized} onChange={e=>setAuthorized(e.target.checked)}/>
     <span>I am authorized to manage this <strong>fictional test</strong> patient profile.</span>
    </label>
    <button type="button" className={styles.primary} onClick={()=>void accept()} disabled={!authorized||busy}>{busy?'Connecting…':'Join care profile'}</button>
   </div>}
   {error&&<p role="alert" className={styles.error}>{error}</p>}
-  <p className={styles.note}>This QR should be scanned only by the intended caretaker. Real patient data is not supported in this prototype.</p>
-  <Link href="/login">Back to doctor sign in</Link>
  </section>;
 }

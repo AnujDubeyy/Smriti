@@ -20,3 +20,6 @@
 .timer{display:flex;align-items:center;gap:9px;flex-wrap:wrap;margin:13px 0}.timer strong{font-size:18px;margin-right:auto}.timer button{border:1px solid #c9c4b8;border-radius:11px;padding:8px 11px;background:#fff;font-size:13px;font-weight:800;min-height:40px}
 .success,.error{padding:14px;border-radius:12px;font-size:14px;margin-top:15px}
 .success{background:#eef7ec;color:#35602d}.error{background:#fff0ee;color:#8f302c}
+.activity>label{display:grid;gap:6px;max-width:18rem;font-weight:750}
+.activity>div>button,.activity input[type=number]{min-height:44px;border:1px solid #afa592;background:#fff;border-radius:10px;padding:8px 12px;font:inherit}
+.activity audio{display:block;margin:12px 0}.completed details,.completed summary{overflow-wrap:anywhere}.completed summary{cursor:pointer;font-weight:750}
