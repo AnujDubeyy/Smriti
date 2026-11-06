@@ -5,6 +5,7 @@ import {usePreferences} from '../app/preferences';
 import {encodeWav} from '../lib/voice/audio';
 import {PcmFrameEncoder} from '../lib/voice/pcm';
 import styles from './voice-call.module.css';
+import {SmritiArt} from './smriti-art';
 
 type Stage='idle'|'connecting'|'listening'|'hearing'|'thinking'|'speaking'|'ended';
 type Entry={speaker:'patient'|'smriti';text:string;time:string};
@@ -290,46 +291,64 @@ export function VoiceStudio({patientId}:{patientId?:string;demo?:boolean}){
  const inCall=active.current&&stage!=='ended';
  const clockText=Math.floor(elapsed/60).toString().padStart(2,'0')+':'+(elapsed%60).toString().padStart(2,'0');
  if(!patientId)return <section className={styles.entry}>
-  <h1>Call Smriti</h1><p>Choose a care profile before starting a private conversation.</p>
+  <SmritiArt name="care-together" size={118}/>
+  <div><span className={styles.eyebrow}>A LITTLE COMPANY GOES A LONG WAY</span><h1>Call Smriti</h1><p>Choose a care profile before starting a private conversation.</p></div>
   <Link className="button companionship" href="/patients/select">Choose patient profile</Link>
   <p className={styles.small}>Voice calls require an account and microphone permission. There is no fake “Begin call” demo.</p>
  </section>;
  return <section className={styles.shell} aria-label="Smriti voice companion">
-  <header className={styles.header}><div><span className={styles.eyebrow}>COMPANIONSHIP</span><h1>Call Smriti</h1></div>
+  <header className={styles.header}>
+   <div className={styles.heading}><span className={styles.eyebrow}>COMPANIONSHIP</span><h1>Call Smriti</h1><p>A calm, familiar voice whenever you need one.</p></div>
    <label className={styles.language}>Call language
     <select value={language} disabled={inCall||stage==='connecting'} onChange={e=>setLanguage(e.target.value as typeof language)}>
      {LANGUAGES.map(([key,label])=><option value={key} key={key}>{label}</option>)}
     </select>
    </label>
   </header>
-  <div className={styles.stage}>
-   <div className={styles.clock}>{inCall?clockText:'A familiar voice, whenever you need one'}</div>
-   <div className={styles.avatar} data-stage={stage}><img src="/brand/companionship.webp" alt="" width="150" height="150"/></div>
-   <h2>Smriti</h2><p className={styles.state} role="status">{stage==='idle'?'Ready to call':stage==='ended'?'Call ended':stage==='connecting'?'Connecting…':stage==='thinking'?'Thinking…':stage==='hearing'?'Hearing you…':stage==='speaking'?'Speaking…':'Listening…'}</p>
-   <p className={styles.detail}>{status}</p>
-   {lastReply&&<div className={styles.reply} role="log"><strong>Smriti</strong><p>{lastReply}</p></div>}
+  <div className={styles.stage} data-stage={stage}>
+   <div className={styles.stageSpark} aria-hidden="true"><i/><i/><i/></div>
+   <div className={styles.clock}>{inCall&&<span className={styles.liveDot}/ >}{inCall?clockText:'A familiar voice, whenever you need one'}</div>
+   <div className={styles.hero}>
+    <div className={styles.waveform} data-active={stage==='listening'||stage==='hearing'||stage==='speaking'} aria-hidden="true">
+     <i/><i/><i/><i/><i/><i/><i/><i/><i/><i/><i/><i/><i/>
+    </div>
+    <div className={styles.avatar} data-stage={stage}>
+     <span className={styles.avatarOrbit} aria-hidden="true"/>
+     <SmritiArt name="patient-avatar" size={142}/>
+    </div>
+    <div className={styles.waveform} data-active={stage==='listening'||stage==='hearing'||stage==='speaking'} aria-hidden="true">
+     <i/><i/><i/><i/><i/><i/><i/><i/><i/><i/><i/><i/><i/>
+    </div>
+   </div>
+   <h2>Smriti</h2>
+   <p className={styles.state} role="status">{stage==='idle'?'Ready to call':stage==='ended'?'Call ended':stage==='connecting'?'Connecting…':stage==='thinking'?'Thinking…':stage==='hearing'?'Hearing you…':stage==='speaking'?'Speaking…':'Listening…'}</p>
+   <div className={styles.statusCard}>
+    <SmritiArt name={stage==='ended'?'happy-feedback':stage==='thinking'?'monitoring-progress':'companionship-chat'} size={34}/>
+    <p className={styles.detail}>{status}</p>
+   </div>
+   {lastReply&&<div className={styles.reply} role="log"><div className={styles.replyHeading}><SmritiArt name="happy-feedback" size={28}/><strong>Smriti says</strong></div><p>{lastReply}</p></div>}
    {playbackBlocked&&<div className={styles.controls}>
     <button className="button companionship" onClick={()=>void player.current?.play().then(()=>setPlaybackBlocked(false)).catch(()=>setError('Your browser blocked sound. Check audio permissions.'))}>Hear Smriti</button>
     <button className="button secondary" onClick={()=>{stopPlayback();resetCapture();}}>Skip audio</button>
    </div>}
   </div>
   <audio ref={player} onEnded={()=>{stopPlayback();resetCapture();}} onError={()=>{setError('Your browser could not play the audio response.');resetCapture();}} preload="auto"/>
-  {!inCall&&<label className={styles.consent}><input type="checkbox" checked={consent} onChange={e=>setConsent(e.target.checked)}/><span>Allow the microphone for this call.</span></label>}
+  {!inCall&&<label className={styles.consent}><input type="checkbox" checked={consent} onChange={e=>setConsent(e.target.checked)}/><span><strong>Allow microphone access</strong><small>Your microphone is used only during this call. You can end the call at any time.</small></span></label>}
   <div className={styles.controls}>
-   {!inCall?<button className={styles.start} disabled={!consent||stage==='connecting'} onClick={()=>void start()}>☎ Call Smriti</button>:<>
+   {!inCall?<button className={styles.start} disabled={!consent||stage==='connecting'} onClick={()=>void start()}><span aria-hidden="true">☎</span> {stage==='ended'?'Call again':'Call Smriti'}</button>:<>
     <button className={styles.control} onClick={()=>{mutedRef.current=!mutedRef.current;setMuted(mutedRef.current);if(!mutedRef.current)resetCapture();}}>{muted?'Unmute':'Mute'} microphone</button>
     <button className={styles.control} onClick={()=>{speakerRef.current=!speakerRef.current;setSpeakerOff(speakerRef.current);if(player.current)player.current.muted=speakerRef.current;}}>{speakerOff?'Unmute':'Mute'} speaker</button>
     <button className={styles.control} disabled={stage==='thinking'||stage==='connecting'} onClick={()=>void say('story')}>Tell me a story</button>
     <button className={styles.end} onClick={()=>endCall()}>End call</button>
    </>}
   </div>
-  {inCall&&<p className={styles.connection}>{transport==='streaming'?'Prisma live recognition':transport==='fallback'?'Automatic speech recognition':'Connecting speech recognition'}</p>}
+  {inCall&&<p className={styles.connection}><span className={styles.connectionDot}/>{transport==='streaming'?'Live speech recognition':transport==='fallback'?'Automatic speech recognition':'Connecting speech recognition'}</p>}
   {error&&<div role="alert" className={styles.error}>{error}</div>}
   <div className={styles.bottom}>
-   <button className="button secondary" onClick={()=>setShowCaptions(v=>!v)} aria-expanded={showCaptions}>{showCaptions?'Hide':'Show'} captions ({captions.length})</button>
+   <button className="button secondary" onClick={()=>setShowCaptions(v=>!v)} aria-expanded={showCaptions}><SmritiArt name="recordings" size={25}/>{showCaptions?'Hide':'Show'} captions ({captions.length})</button>
    <Link className="button secondary" href={'/permissions?patient='+patientId}>Care permissions</Link>
   </div>
-  {showCaptions&&<div className={styles.captions} role="log">{captions.length?captions.map((entry,i)=><div className={entry.speaker==='smriti'?styles.smritiLine:styles.patientLine} key={entry.time+i}><strong>{entry.speaker==='smriti'?'Smriti':'You'}</strong><p lang={language}>{entry.text}</p></div>):<p>The conversation will appear here.</p>}</div>}
+  {showCaptions&&<div className={styles.captions} role="log">{captions.length?captions.map((entry,i)=><div className={entry.speaker==='smriti'?styles.smritiLine:styles.patientLine} key={entry.time+i}><strong>{entry.speaker==='smriti'?'Smriti':'You'}</strong><p lang={language}>{entry.text}</p></div>):<div className={styles.emptyCaptions}><SmritiArt name="empty-recordings" size={90}/><p>Your conversation will appear here.</p></div>}</div>}
   <p className={styles.small}>Conversations are not medical diagnoses.</p>
- </section>;
+ </section>;;
 }
