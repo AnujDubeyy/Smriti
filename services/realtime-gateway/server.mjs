@@ -49,14 +49,17 @@ wss.on("connection",(client,_req,claim)=>{
  const notify=data=>{if(client.readyState===WebSocket.OPEN)client.send(JSON.stringify(data));};
  const close=()=>{if(closed)return;closed=true;clearInterval(pacer);clearInterval(watchdog);client.close();upstream.close();};
  const pacer=setInterval(()=>{if(queue.length&&upstream.readyState===WebSocket.OPEN)upstream.send(queue.shift());},32);
- const watchdog=setInterval(()=>{if(Date.now()-last>120000||Date.now()-claim.iat*1000>60000)close();},1000);
+ const watchdog=setInterval(()=>{if(Date.now()-last>120000||Date.now()-claim.iat*1000>90000)close();},1000);
  upstream.on("open",()=>notify({type:"connected",transport:"prisma-stream"}));
  upstream.on("message",message=>{try{
   const e=JSON.parse(message.toString());
   if(["connected","processing","transcript","speech_start","error"].includes(e.type)){
    notify({type:e.type,text:typeof e.text==="string"?e.text.slice(0,6000):undefined,
     message:typeof e.message==="string"?e.message.slice(0,300):undefined,
-    detected_language_code:e.detected_language_code});
+    detected_language_code:e.detected_language_code,
+    audio_duration_ms:Number.isFinite(e.audio_duration_ms)?Math.min(30000,Math.max(0,e.audio_duration_ms)):undefined,
+    latency_ms:Number.isFinite(e.latency)?Math.min(30000,Math.max(0,e.latency)):undefined,
+    segment_index:Number.isInteger(e.segment_index)?Math.max(0,e.segment_index):undefined});
   }
  }catch{notify({type:"error",message:"Invalid provider response"});}});
  upstream.on("error",()=>{notify({type:"error",message:"Prisma connection failed"});close();});

@@ -16,223 +16,39 @@
 
 .auth-panel{max-width:34rem;margin-inline:auto}.auth-panel>p{margin-block:1rem}.auth-form{display:grid;gap:1rem;margin-block:2rem}.auth-form input{min-height:3rem;border:1px solid #898781;border-radius:.75rem;padding:.75rem;min-width:0;width:100%;background:white;color:var(--text)}.auth-form input:disabled{background:#F4F3F0}.auth-form>p{font-size:1rem;color:var(--muted)}.account-link{display:flex;align-items:center;min-height:3rem;font-size:1rem;max-width:12rem}.patient-list{list-style:none;padding:0;display:grid;gap:1rem}.patient-list li{display:flex;flex-wrap:wrap;justify-content:space-between;gap:1rem;align-items:center;padding:1rem;background:white;border:1px solid var(--border);border-radius:1rem}.patient-list span{overflow-wrap:anywhere;min-width:0}
 
-.section-title{margin-top:2rem}.consent-list{display:grid;gap:1rem;margin-block:1.5rem}.consent-list label,.consent-choice{display:flex;gap:.75rem;align-items:flex-start;padding:.75rem;background:white;border:1px solid var(--border);border-radius:.75rem}input[type=checkbox]{width:1.5rem;height:1.5rem;flex-shrink:0}textarea{font:inherit;min-height:7rem;width:100%;border:1px solid #898781;border-radius:.75rem;padding:.75rem;resize:vertical;color:var(--text);background:white}.voice-panel>p,.voice-panel>.actions{margin-block:1rem}audio{width:100%;max-width:35rem;margin-block:1rem}blockquote{border-left:3px solid var(--monitoring);padding-left:1rem;margin-inline:0}li{overflow-wrap:anywhere}form{max-width:38rem}button{max-width:100%}
-
-.entry-body{display:block;max-width:58rem}.auth-form input[type=checkbox]{width:1.4rem;min-height:1.4rem;vertical-align:middle;margin-right:.6rem}.auth-form>h2{margin-top:1rem}.account-link:is(button){border:0;background:none;text-decoration:underline;padding:0}.auth-form>label:has(input[type=checkbox]){font-size:1rem}
-
-/* Login-first care workflow: no public preview elements or disabled feature cards. */
-.smriti-entry{background:#faf9f6}
-.smriti-entry .app-header{justify-content:center;padding:17px 24px}
-.smriti-entry .brand-logo{width:135px}
-.smriti-entry .app-body{max-width:920px}
-.smriti-entry main{padding:clamp(24px,4vw,48px) 18px 36px}
-.care-home{max-width:900px;margin:0 auto}
-.care-home>h1{font-size:clamp(30px,5vw,42px);margin-bottom:10px;max-width:none}
-.care-home .intro{font-size:16px;line-height:1.5}
-.care-home-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:17px;margin:30px 0 22px}
-.care-home-tile{display:flex;flex-direction:column;align-items:flex-start;gap:10px;text-decoration:none;border-radius:20px;border:1px solid #e1ded6;padding:25px;min-height:235px;background:#fff;transition:transform .15s,border-color .15s}
-.care-home-tile:hover{border-color:#a6a197;transform:translateY(-2px)}
-.care-home-tile strong{font-size:22px;line-height:1.25;font-weight:850}
-.care-home-tile>span:not(.care-home-icon){font-size:14px;color:#635d54;line-height:1.5;flex:1}
-.care-home-tile>b{font-size:14px}
-.care-home-tile.talk{background:#fffae7;border-color:#e9d9a5}
-.care-home-tile.talk b{color:#725500}
-.care-home-tile.observe b{color:#1556e8}
-.care-home-tile.assessments b{color:#b72c33}
-.care-home-icon{display:grid;place-items:center;border-radius:50%;background:white;width:48px;height:48px;font-size:26px;color:#333}
-.care-home-links{display:flex;gap:18px;flex-wrap:wrap;padding-top:16px;font-size:14px}
-.care-home-links a{font-weight:750}
-.doctor-home,.doctor-patient{max-width:850px;margin:0 auto}
-.doctor-home>h1{max-width:none;margin-bottom:10px}
-.doctor-home>.intro{font-size:16px}
-.doctor-status{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:15px;padding:20px;border-radius:17px;border:1px solid #e3dfd6;background:white;margin:28px 0}
-.doctor-status strong{font-size:13px;color:#676159}
-.doctor-status p{font-size:18px;font-weight:850;margin-top:4px}
-.doctor-onboarding-next{border:1px solid #e2dcd1;background:#fff;border-radius:18px;padding:24px;margin-top:20px}
-.doctor-onboarding-next h2{margin-bottom:14px}
-.doctor-onboarding-next p{font-size:15px;line-height:1.6;margin:12px 0;color:#625d54}
-.doctor-patient-list{display:grid;gap:12px;padding:0;margin:18px 0;list-style:none}
-.doctor-patient-list li{display:flex;justify-content:space-between;gap:12px;align-items:center;padding:14px;background:#f8f7f3;border-radius:12px}
-.doctor-patient-list .button{min-height:44px}
-@media(max-width:640px){.care-home-grid{grid-template-columns:1fr}.care-home-tile{min-height:170px;padding:20px}.doctor-status{align-items:stretch}.doctor-status .button{width:100%}.doctor-onboarding-next{padding:19px}.care-home-links{flex-direction:column;gap:12px}.smriti-entry .app-header{padding:12px}.smriti-entry .brand-logo{width:115px}}
-
-
-/* Authentication fallback styles: intentionally global so the two form fields
-   remain visible even when route-level CSS module chunks are stale in a PWA. */
-.smriti-auth-layout{display:block;width:100%;max-width:430px;margin:8px auto 48px;padding:0 8px}
-.smriti-auth-heading{display:block;margin-bottom:28px}
-.smriti-auth-kicker{display:block;color:#846419;font-size:12px;font-weight:900;letter-spacing:.14em;margin-bottom:10px}
-.smriti-auth-heading h1{font-size:clamp(29px,5vw,37px);line-height:1.18;margin:0 0 12px;max-width:none}
-.smriti-auth-heading p{font-size:15px;color:#625e56;line-height:1.55;max-width:44ch}
-.smriti-auth-form{display:grid!important;grid-template-columns:minmax(0,1fr);gap:18px!important;width:100%;max-width:none;margin:0}
-.smriti-auth-form>label{display:flex!important;flex-direction:column!important;align-items:stretch!important;gap:8px!important;font-size:14px;font-weight:800;line-height:1.4;min-width:0}
-.smriti-auth-form>label>input{display:block!important;box-sizing:border-box!important;appearance:none!important;outline:none;min-height:54px!important;width:100%!important;border:1.5px solid #aaa398!important;border-radius:13px!important;background:#fff!important;color:#1a1a1a!important;padding:13px 15px!important;font:inherit!important;font-size:16px!important;font-weight:500!important;line-height:1.45!important;opacity:1!important}
-.smriti-auth-form>label>input::placeholder{color:#88857e!important;opacity:1}
-.smriti-auth-form>label>input:focus{border-color:#8c6a19!important;box-shadow:0 0 0 3px #ffcb2560!important}
-.smriti-auth-primary,.smriti-auth-primaryLink{display:flex!important;align-items:center;justify-content:center;min-height:55px;padding:12px 18px;width:100%;background:#1d1c1a;color:#fff!important;border:1px solid #1d1c1a;border-radius:13px!important;text-align:center;font-weight:850;font-size:16px;line-height:1.4;text-decoration:none;margin-top:4px}
-.smriti-auth-primary:disabled{opacity:.55;cursor:not-allowed}
-.smriti-auth-links{display:flex;align-items:center;justify-content:space-between;gap:15px;flex-wrap:wrap;margin-top:23px;font-size:14px}
-.smriti-auth-links a{font-weight:850;color:#705314}
-.smriti-auth-error{display:block;background:#fff1ef;border:1px solid #e4ada4;color:#8a2924;border-radius:11px;padding:12px;font-size:13px;line-height:1.45}
-.smriti-auth-hint{color:#79746c;font-size:13px}
-.smriti-auth-footnote{color:#77716a;font-size:12px;line-height:1.5;margin-top:30px}
-.smriti-auth-confirmation{border:1px solid #e5dcc8;background:#fff9ec;border-radius:17px;padding:22px}
-.smriti-auth-confirmation h2{font-size:21px;margin-bottom:10px}
-.smriti-auth-confirmation p{font-size:14px;margin-bottom:16px}
-@media(max-width:600px){.smriti-auth-layout{padding:0 4px}.smriti-auth-form>label>input{min-height:54px!important}}
-
-
-/* Responsive Smriti navigation: compact laptop rail and phone-native bottom tabs.
-   These rules override the earlier always-open, 17rem desktop pillar sidebar. */
-.smriti-layout{width:100%;min-width:0;overflow-x:clip}
-.smriti-layout-header{
- display:flex;justify-content:space-between;align-items:center;flex-wrap:nowrap;
- gap:14px;min-height:76px;width:100%;padding:12px clamp(15px,3vw,32px);
- background:#fff;border-bottom:1px solid #e9e5de;position:relative;z-index:20
-}
-.smriti-header-leading,.smriti-header-trailing{
- display:flex;align-items:center;gap:10px;min-width:0
-}
-.smriti-header-leading .brand-link{min-width:0;flex-shrink:1}
-.smriti-header-leading .brand-logo{display:block;width:clamp(112px,14vw,148px);max-width:100%;height:auto}
-.smriti-sidebar-toggle{
- display:none;align-items:center;justify-content:center;
- width:44px;height:44px;min-height:44px;flex-shrink:0;
- background:#fff;border:1px solid #e2ddd3;border-radius:12px;color:#25231f
-}
-.smriti-sidebar-toggle:hover,.smriti-account-toggle:hover{background:#f7f4eb}
-.smriti-header-trailing{position:relative;flex-shrink:0}
-.smriti-account-toggle{
- display:flex;justify-content:center;align-items:center;gap:9px;max-width:none;
- min-height:44px;padding:9px 12px;border:1px solid #e5e0d5;
- background:#fff;border-radius:12px;color:#27231f;font-weight:800;font-size:14px
-}
-.smriti-account-toggle[aria-expanded=true]{background:#fff7df;border-color:#d6b553}
-.smriti-account-popover{
- position:absolute;right:0;top:calc(100% + 10px);width:min(290px,calc(100vw - 24px));
- z-index:35;padding:12px;background:#fff;border:1px solid #e4dfd4;border-radius:16px;
- box-shadow:0 12px 34px rgba(34,30,23,.12);
- display:grid;gap:4px
-}
-.smriti-account-language{display:grid;gap:7px;padding:8px 9px 13px;
- font-size:12px;font-weight:850;color:#585248;border-bottom:1px solid #ebe5dc;margin-bottom:4px}
-.smriti-account-language select{min-height:44px;width:100%;font-weight:600;font-size:14px;color:#201f1b}
-.smriti-account-option{
- display:flex;align-items:center;min-height:46px;padding:10px 12px;
- border:0;border-radius:10px;background:#fff;text-align:left;text-decoration:none;
- color:#29251f;font-size:14px;font-weight:800;width:100%;max-width:none;cursor:pointer
-}
-.smriti-account-option:hover,.smriti-account-option:focus-visible{background:#f8f4e9}
-.smriti-signout{color:#9a392d;border-top:1px solid #eee8dd;border-radius:0;margin-top:4px}
-.smriti-account-error{font-size:12px;line-height:1.4;color:#9a392d;padding:8px}
-.smriti-entry .smriti-layout-header{justify-content:center}
-.smriti-entry .smriti-header-leading .brand-logo{width:135px}
-
-/* Default to an uncluttered phone/tablet layout, including narrow laptop windows. */
-.smriti-app-body{display:block;width:100%;max-width:90rem;min-width:0;margin-inline:auto}
-.smriti-app-body--nav{display:block}
-.smriti-main-column{width:100%;min-width:0;max-width:100%}
-.smriti-main-column main{
- box-sizing:border-box;display:block;width:100%;min-width:0;
- max-width:70rem;margin:0 auto;padding:clamp(20px,3vw,40px) clamp(15px,3vw,32px);
- padding-bottom:calc(7.7rem + env(safe-area-inset-bottom))
-}
-.smriti-main-column main>*{max-width:100%;min-width:0}
-.smriti-main-column .app-footer{width:100%;max-width:70rem}
-.smriti-desktop-rail{display:none}
-.smriti-mobile-navigation{
- display:grid;grid-template-columns:repeat(3,minmax(0,1fr));
- position:fixed;left:0;right:0;bottom:0;z-index:30;
- padding:8px 10px calc(8px + env(safe-area-inset-bottom));gap:7px;
- background:#fff;border-top:1px solid #e8e1d8;
- box-shadow:0 -5px 22px rgba(40,32,25,.045);
- min-height:78px
-}
-.smriti-nav-item{
- display:flex;align-items:center;justify-content:center;gap:10px;
- min-width:0;max-width:none;text-decoration:none;
- border:1px solid transparent;border-radius:15px;
- color:#49433b;font-size:14px;font-weight:750;line-height:1.2;
- transition:background-color .16s ease,border-color .16s ease
-}
-.smriti-nav-item .mascot{
- display:block;width:34px;height:34px;flex-shrink:0;
- border-radius:11px;background:transparent
-}
-.smriti-mobile-navigation .smriti-nav-item{
- min-height:61px;padding:7px 3px;flex-direction:column;
- justify-content:center;gap:2px;font-size:clamp(11px,2.6vw,13px)
-}
-.smriti-mobile-navigation .smriti-nav-item .mascot{width:31px;height:31px}
-.smriti-nav-label{min-width:0;overflow:hidden;text-overflow:ellipsis}
-.smriti-mobile-navigation .is-active{font-weight:900}
-.smriti-nav-item.assessment.is-active{background:#fff0f0;color:#ad2630;border-color:#f3d2d5}
-.smriti-nav-item.companionship.is-active{background:#fff5d8;color:#66501a;border-color:#f0dfb2}
-.smriti-nav-item.monitoring.is-active{background:#eff4ff;color:#164db5;border-color:#d7e4ff}
-.smriti-nav-profile.is-active{background:#f7f3e9;border-color:#e9e1d2}
-@media(max-width:380px){
- .smriti-layout-header{padding:10px 12px;min-height:68px}
- .smriti-header-leading .brand-logo{width:115px}
- .smriti-account-toggle{padding:9px;width:44px}
- .smriti-mobile-navigation{gap:4px;padding-inline:6px}
-}
-@media(max-width:680px){
- .smriti-account-toggle>span,.smriti-account-toggle>svg:last-child{display:none}
- .smriti-account-toggle{width:45px;height:45px;padding:9px}
- .smriti-main-column main{padding-inline:16px}
- .smriti-app-body .app-footer{padding-bottom:calc(7.7rem + env(safe-area-inset-bottom))}
-}
-@media(min-width:1024px){
- .smriti-sidebar-toggle{display:flex}
- .smriti-app-body--nav{
-  display:grid;grid-template-columns:76px minmax(0,1fr);gap:15px;
-  padding-inline:clamp(12px,2.25vw,28px);
-  transition:grid-template-columns .2s ease
- }
- .smriti-app-body--nav.is-sidebar-expanded{grid-template-columns:224px minmax(0,1fr)}
- .smriti-desktop-rail{
-  display:block;position:sticky;top:16px;align-self:start;
-  min-width:0;max-height:calc(100dvh - 32px);overflow-y:auto;
-  padding-top:20px
- }
- .smriti-desktop-navigation{
-  display:flex;flex-direction:column;gap:9px;padding:10px;
-  background:#fff;border:1px solid #e9e3d8;border-radius:19px;
-  min-width:0
- }
- .smriti-desktop-navigation .smriti-nav-item{
-  min-height:56px;padding:10px 8px;flex-direction:row;justify-content:center
- }
- .smriti-desktop-navigation .smriti-nav-label{display:none}
- .smriti-desktop-navigation .smriti-nav-profile{margin-top:10px;border-top:1px solid #eee8dd}
- .is-sidebar-expanded .smriti-desktop-navigation .smriti-nav-item{
-  justify-content:flex-start;padding-inline:12px
- }
- .is-sidebar-expanded .smriti-desktop-navigation .smriti-nav-label{display:inline}
- .smriti-mobile-navigation{display:none}
- .smriti-main-column main{padding-bottom:40px}
- .smriti-app-body .app-footer{padding-bottom:2rem}
-}
-@media(prefers-reduced-motion:reduce){
- .smriti-app-body--nav,.smriti-nav-item{transition:none}
-}
-
-/* Doctor-specific navigation keeps clinicians in their own workspace. */
-.smriti-doctor-nav-icon{
- width:34px;height:34px;display:grid;place-items:center;flex:none;
- border-radius:11px;background:#f1f4f9;color:#273b5b;
- font-size:23px;font-weight:900;line-height:1
-}
-.smriti-doctor-item.is-active{background:#eaf1ff;color:#1d4c9e;border-color:#d3e0fa}
-.smriti-doctor-item.is-active .smriti-doctor-nav-icon{background:#d8e6ff}
-.smriti-doctor-item .smriti-nav-label{line-height:1.2}
-@media(max-width:1023px){
- .smriti-mobile-navigation:has(.smriti-doctor-item){
-  grid-template-columns:repeat(4,minmax(0,1fr));gap:4px;padding-inline:6px
- }
- .smriti-mobile-navigation .smriti-doctor-item{font-size:clamp(10px,2.5vw,12px)}
- .smriti-mobile-navigation .smriti-doctor-nav-icon{height:29px;width:29px;font-size:20px}
-}
-@media(min-width:1024px){
- .smriti-desktop-navigation .smriti-doctor-nav-icon{width:34px;height:34px}
+.section-title{margin-top:2rem}.consent-list{display:grid;gap:1rem;margin-block:1.5rem}.consent-list label,.consent-choice{display:flex;gap:.75rem;align-items:flex-start;padding:.75rem;background:white;border:1px solid var(--border);border-radius:.75rem}input[type=checkbox]{width:1.5rem;height:1.5rem;flex-shrink:0}textarea{font:inherit;min-height:7rem;width:100%;boßmûæÚ$z{-®éÜj×€™s exact words here."/>
+      </label>
+     </section>
+     {code==='smriti_word_repeat_v1'?<p className={styles.scoringNote}>Recognized words are highlighted for review. Check the transcript before saving.</p>:null}
+     <AssessmentRecorder key={chosen.id} patientId={patientId} locale={language} preview={localPreview}
+      onBusy={setRecording} onState={setRecorderState}
+      onText={text=>{setReply(text);setCount(code==='smriti_word_repeat_v1'?String(wordMatches(text,language)):count);}}
+      onRecording={async capture=>{
+       const id=crypto.randomUUID();
+       await saveAssessmentRecording({id,ownerId:patientId,patientName:name,assignmentId:chosen.id,activityTitle:title||'Assessment',recordedAt:new Date().toISOString(),locale:language,...capture});
+       setActiveRecordingId(id);setRecordingLibraryVersion(value=>value+1);
+      }}/>
+     <p className={styles.localAudioNote}>After recording, it is saved in this browser on this device. Use the library below to export or share it.</p>
+     <details className={styles.caregiverNotes}><summary>Caregiver observation <span>(optional)</span></summary><label>What did you notice?<textarea maxLength={1200} rows={3} value={observation} onChange={e=>setObservation(e.target.value)} placeholder="For example, the patient needed the instruction repeated."/></label></details>
+    </aside>
+   </div>
+   {error?<p role="alert" className={styles.error}>{error}</p>:null}
+   {code!=='smriti_word_repeat_v1'?<label className={styles.countField}>Caregiver-confirmed {code==='smriti_orientation_v1'?'answers (out of 2)':'animals named'}<input type="number" required min="0" max={code==='smriti_orientation_v1'?2:200} value={count} onChange={e=>setCount(e.target.value)}/></label>:<input type="hidden" value={count} readOnly/>}
+   <form onSubmit={submit} className={styles.submitRow}>
+    <p>Review the response before saving. Nothing is sent automatically.</p>
+    <button type="submit" className={styles.submit} disabled={busy||recording||!reply.trim()||!count.trim()}>{busy?'Saving responseâ€¦':'Save response'}</button>
+   </form>
+  </section>:<>
+   <h2 className={styles.section}>Assigned activities</h2>
+   {pending.length?<div className={styles.list}>{pending.map(a=>{
+    const activity=activityCatalog.find(x=>x.code===a.instrument_code);if(!activity)return null;
+    return <article className={styles.card} key={a.id}>
+     <div className={styles.cardIdentity}><Mascot pillar="assessment"/><div><strong>{activity.title}</strong><p>{activity.description}</p>{a.due_date?<small>Due {displayDate(a.due_date)}</small>:null}</div></div>
+     <button type="button" className={styles.begin} onClick={()=>selectActivity(a.id)}>Begin activity <span aria-hidden="true">â†’</span></button>
+    </article>;
+   })}</div>:<div className={styles.empty}><Mascot pillar="assessment"/><div><strong>No activities assigned yet</strong><p>Your doctorâ€™s next activity will appear here.</p></div></div>}
+   {completed.length?<section className={styles.completed}><h2>Submitted activities</h2><ul>{completed.map(a=><li key={a.id}><strong>{activityCatalog.find(x=>x.code===a.instrument_code)?.title||'Activity'}</strong><span>{a.status}</span><AssessmentResult assignment={a}/></li>)}</ul></section>:null}
+  </>}
+  <AssessmentRecordingLibrary ownerId={patientId} refreshKey={recordingLibraryVersion}/>
+ </section>;
 }

@@ -38,10 +38,20 @@ export function activityPrompt(code:ActivityCode,locale:string):string{
  return prompts[code][lang];
 }
 
+export function wordTargets(locale:string){
+ return locale==='hi-IN'?['कप','नदी','बगीचा','कुर्सी','आम']:locale==='mr-IN'?['कप','नदी','बाग','खुर्ची','आंबा']:['cup','river','garden','chair','mango'];
+}
+function normalizeWord(value:string,_locale:string){return value.normalize('NFC').toLowerCase();}
 export function wordMatches(text:string,locale:string){
- const targets=locale==='hi-IN'?['कप','नदी','बगीचा','कुर्सी','आम']:locale==='mr-IN'?['कप','नदी','बाग','खुर्ची','आंबा']:['cup','river','garden','chair','mango'];
- const spoken=new Set(text.normalize('NFC').toLowerCase().split(/[^\p{L}\p{M}]+/u));
- return targets.filter(word=>spoken.has(word)).length;
+ const targets=new Set(wordTargets(locale).map(word=>normalizeWord(word,locale)));
+ const spoken=new Set(text.normalize('NFC').split(/[^\p{L}\p{M}]+/u).map(word=>normalizeWord(word,locale)).filter(Boolean));
+ return [...targets].filter(word=>spoken.has(word)).length;
+}
+export function wordMatchTokens(text:string,locale:string,scoreWords:boolean):{text:string;recognized:boolean}[]{
+ const targetSet=new Set(scoreWords?wordTargets(locale).map(word=>normalizeWord(word,locale)):[]);
+ return text.split(/([\p{L}\p{M}]+)/u).filter(Boolean).map(part=>({
+  text:part,recognized:/[\p{L}\p{M}]/u.test(part)&&targetSet.has(normalizeWord(part,locale))
+ }));
 }
 export function resultLabel(code:string){
  return code==='smriti_word_repeat_v1'?'target words repeated out of 5':code==='smriti_orientation_v1'?'correct answers out of 2':'distinct animals confirmed';

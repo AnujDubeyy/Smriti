@@ -16,8 +16,8 @@ export async function POST(request:Request){
   if(r.error)throw r.error;
   if(!isVoiceLocale(r.data.locale))throw new CareError("unsupported_locale",400);
   const now=Math.floor(Date.now()/1000);
-  const body=Buffer.from(JSON.stringify({session_id:parsed.data.session_id,locale:r.data.locale,iat:now,exp:now+45,scope:"voice:stream"})).toString("base64url");
+  const body=Buffer.from(JSON.stringify({session_id:parsed.data.session_id,locale:r.data.locale,iat:now,exp:now+90,scope:"voice:stream"})).toString("base64url");
   const mac=createHmac("sha256",secret).update(body).digest("base64url");
-  return json({ticket:body+"."+mac,expires_in:45,url:process.env.NEXT_PUBLIC_SMRITI_GATEWAY_URL});
+  return json({ticket:body+"."+mac,expires_in:90,url:process.env.NEXT_PUBLIC_SMRITI_GATEWAY_URL});
  }catch(e){return failure(e);}
 }

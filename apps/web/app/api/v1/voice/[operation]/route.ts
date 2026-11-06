@@ -18,11 +18,14 @@ async function readAudio(request:Request){const reader=request.body?.getReader()
 export async function POST(request:Request,{params}:{params:Promise<{operation:string}>}){
  try{if(!sameOrigin(request))throw new CareError('forbidden',403);const client=await requireCare();const {operation}=await params;
  const rpc=async(op:string,input:object)=>{const r=await client.rpc('smriti_voice',{operation:op,input});if(r.error)throw r.error;return r.data;};
- if(operation==='transcribe'){
+ if(operation==='transcribe'||operation==='assessment_transcribe'){
   const ids=reviewed.pick({session_id:true,turn_id:true}).parse({session_id:request.headers.get('x-session-id'),turn_id:request.headers.get('x-turn-id')});
   if(request.headers.get('content-type')!=='audio/wav')throw new CareError('audio_format',415);
-  const audio=await readAudio(request);const c=providerConfig();const claim=await rpc('claim',{...ids,hash:createHash('sha256').update(audio).digest('hex')});if(claim.duplicate)throw new CareError('duplicate_turn',409);
-  try{const result=await (c.speechProvider==='groq'?groqTranscribe:transcribe)(audio,claim.locale,c.speech,request.signal);await rpc('check',ids);return json({...result,turn_id:ids.turn_id,mode:c.mode});}
+  const audio=await readAudio(request);const c=operation==='assessment_transcribe'?null:providerConfig();
+  const speechKey=operation==='assessment_transcribe'?process.env.GNANI_API_KEY_ID:c?.speech;
+  if(!speechKey)throw new CareError('voice_not_configured',503);
+  const claim=await rpc('claim',{...ids,hash:createHash('sha256').update(audio).digest('hex')});if(claim.duplicate)throw new CareError('duplicate_turn',409);
+  try{const result=operation==='assessment_transcribe'?await transcribe(audio,claim.locale,speechKey,request.signal):await (c?.speechProvider==='groq'?groqTranscribe:transcribe)(audio,claim.locale,speechKey,request.signal);await rpc('check',ids);return json({...result,turn_id:ids.turn_id,mode:'live'});}
   catch(e){await rpc('fail',ids).catch(()=>{});throw e;}
  }
  const raw=await limitedBody(request,18000);if(raw===null)throw new CareError('payload_too_large',413);const input=JSON.parse(raw);
