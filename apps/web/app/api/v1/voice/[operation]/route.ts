@@ -71,7 +71,7 @@ export async function POST(request:Request,{params}:{params:Promise<{operation:s
    if(config.ttsKey)try{audio=await synthesize(output.result.reply,state.locale,config.voice,config.ttsKey,request.signal);}
    catch(e){audioError=e instanceof Error?e.message:'tts_unavailable';}
    await rpc('check',data);
-   await rpc('finish',{...data,transcript:data.kind==='greeting'?'[Smriti greeting requested]':'[Smriti story requested]',result:output.result,metadata:{provenance:'ui_'+data.kind,stt:'not_applicable',tts:audio?'timbre-v3.0':audioError?'failed':'none',llm:output.model}});
+   await rpc('finish',{...data,transcript:data.kind==='greeting'?'[Smriti greeting requested]':'[Smriti story requested]',result:output.result,metadata:{provenance:'ui_'+data.kind,stt:'not_applicable',tts:audio?'timbre-v2.5':audioError?'failed':'none',llm:output.model}});
    return json({...output,audio:audio?Buffer.from(audio).toString('base64'):null,audioError});
   }catch(e){await rpc('fail',data).catch(()=>{});throw e;}
  }
@@ -110,7 +110,7 @@ export async function POST(request:Request,{params}:{params:Promise<{operation:s
    const output=await respond({mode:'companion',locale:state.locale,text:data.text,approved_context:z.array(itemSchema).parse(context.items),logs:[],history:data.history,support_profile},request.signal);
    await rpc('check',data);const c=providerConfig();let audio:Uint8Array|null=null;let audioError:string|null=null;
    if(!output.result.stop&&c.ttsKey)try{audio=await synthesize(output.result.reply,state.locale,c.voice,c.ttsKey,request.signal);}catch(e){audioError=e instanceof Error?e.message:'tts_unavailable';}
-   await rpc('check',data);await rpc('finish',{...data,transcript:data.text,result:output.result,metadata:{stt:data.source==='stream'?'prisma-stream':'prisma-rest',tts:audio?'timbre-v3.0':audioError?'failed':'none',llm:output.model,provenance:'browser_transcript_unverified',mode:c.mode}});
+   await rpc('check',data);await rpc('finish',{...data,transcript:data.text,result:output.result,metadata:{stt:data.source==='stream'?'prisma-stream':'prisma-rest',tts:audio?'timbre-v2.5':audioError?'failed':'none',llm:output.model,provenance:'browser_transcript_unverified',mode:c.mode}});
    if(output.result.stop)await rpc('stop',data);
    return json({...output,audio:audio?Buffer.from(audio).toString('base64'):null,audioError,contentType:audio?'audio/wav':null});
   }catch(e){await rpc('fail',data).catch(()=>{});throw e;}
