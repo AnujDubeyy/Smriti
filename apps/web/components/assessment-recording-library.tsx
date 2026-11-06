@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { createAssessmentFile, deleteAssessmentRecording, formatRecordingTime, listAssessmentRecordings, type AssessmentRecording } from '../lib/assessment-recordings';
 import styles from './assessment-recording-library.module.css';
+import {SmritiArt} from './smriti-art';
 
 function localDate(value: string) {
   const date = new Date(value);
@@ -54,7 +55,7 @@ export function AssessmentRecordingLibrary({ ownerId, refreshKey = 0 }: { ownerI
     <p className={styles.privacy}>Recordings are stored in this browser on this device, not uploaded to Smriti. Clearing browser data may remove them. An exported file contains the patient’s name, audio, and transcript; share it only with the intended doctor.</p>
     {error ? <p role="alert" className={styles.error}>{error}</p> : null}
     {recordings.length ? <div className={styles.list}>{recordings.map(recording => <RecordingCard key={recording.id} recording={recording} busy={busyId === recording.id} onDownload={() => void exportRecording(recording, false)} onShare={() => void exportRecording(recording, true)} onDelete={() => void remove(recording)} />)}</div>
-      : <p className={styles.empty}>Recorded assessment answers will appear here.</p>}
+      : <div className={styles.empty}><SmritiArt name="empty-recordings" size={110}/><p>Recorded assessment answers will appear here.</p></div>}
   </section>;
 }
 
