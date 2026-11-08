@@ -89,12 +89,14 @@ export function DoctorAssessmentManager({patients,initialPatient,localPreview=fa
   }catch(e){
    const reason=e instanceof Error?e.message:'temporarily_unavailable';
    const messages:Record<string,string>={
-    assessment_already_assigned:'This activity is already assigned and awaiting a response.',
-    sharing_required:'The caretaker needs to enable doctor sharing first.',
+    assessment_already_assigned:'This activity is already assigned and awaiting a response from the patient.',
+    sharing_required:'The caretaker needs to enable doctor sharing first in Care permissions.',
     invalid_due_date:'Choose a date within the next 180 days.',
-    invalid_assessment:'This activity is not supported.',
+    invalid_assessment:'Database update required in Supabase: Please run migration 20261108130000_voice_cognitive_assessments.sql in your Supabase SQL editor to enable 6CIT, TICS, and MoCA Blind. (You can also assign a Trial Practice activity in the meantime).',
    };
-   setError(messages[reason]||'The activity could not be assigned. Please try again.');
+   const errText = messages[reason]||'The activity could not be assigned. Please try again.';
+   setError(errText);
+   throw new Error(errText);
   }finally{setBusy(false);}
  }
 
