@@ -109,20 +109,31 @@ export function PatientAssessments({patientId,name,locale,initial,localPreview=f
    const data=await response.json().catch(()=>({error:'temporarily_unavailable'}));
    if(!response.ok)throw new Error(data.error||'temporarily_unavailable');
 
+   const firstItem = data.first_item || {
+    index: data.instrument?.currentItemIndex ?? 0,
+    title: data.instrument?.title || "Assessment",
+    prompt: data.first_prompt,
+    time_limit_seconds: data.instrument?.timeLimitSeconds
+   };
+
    setActiveVoiceSession({
-    sessionId:data.session_id,
-    assignmentId:assignment.id,
-    instrumentCode:data.instrument.code,
-    instrumentTitle:data.instrument.title,
-    locale:selectedLocale,
-    totalItems:data.instrument.totalItems,
-    initialItemIndex:data.first_item.index,
-    initialItemTitle:data.first_item.title,
-    initialPrompt:data.first_item.prompt,
-    timeLimitSeconds:data.first_item.time_limit_seconds
+    sessionId: data.session_id,
+    assignmentId: assignment.id,
+    instrumentCode: data.instrument?.code || assignment.instrument_code,
+    instrumentTitle: data.instrument?.title || "Assessment",
+    locale: selectedLocale,
+    totalItems: data.instrument?.totalItems || 1,
+    initialItemIndex: firstItem.index ?? 0,
+    initialItemTitle: firstItem.title || "Assessment",
+    initialPrompt: firstItem.prompt || data.first_prompt,
+    timeLimitSeconds: firstItem.time_limit_seconds
    });
-  }catch{
-   setError('Unable to launch voice assessment session. Please verify microphone permissions.');
+  }catch(err){
+   console.error("Launch voice assessment error:", err);
+   const m = err instanceof Error ? err.message : "";
+   setError(m && m !== "temporarily_unavailable"
+    ? `Unable to launch voice assessment (${m}).`
+    : "Unable to launch voice assessment session. Please verify your connection.");
   }finally{
    setBusy(false);
   }

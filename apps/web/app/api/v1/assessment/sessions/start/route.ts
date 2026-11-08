@@ -62,6 +62,14 @@ export async function POST(request: Request) {
         currentDomain: firstItem?.domain,
         timeLimitSeconds: firstItem?.timeLimitSeconds
       },
+      first_item: {
+        id: firstItem?.id || '',
+        index: 0,
+        title: firstItem?.title || instrument.title,
+        domain: firstItem?.domain || 'General',
+        prompt: initialPrompt,
+        time_limit_seconds: firstItem?.timeLimitSeconds
+      },
       first_prompt: initialPrompt
     }, 201);
   } catch (e) {
