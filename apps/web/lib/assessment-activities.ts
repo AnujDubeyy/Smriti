@@ -8,8 +8,13 @@ export const activityCatalog=[
   duration:'2 min',description:'Respond to gentle questions about the day and current surroundings.'}
 ] as const;
 export type ActivityCode=typeof activityCatalog[number]['code'];
+export type StandardizedAssessmentCode='six_cit_v1'|'tics_v1'|'moca_blind_v1';
+export type AssessmentCode=ActivityCode|StandardizedAssessmentCode;
 export function isActivityCode(value:string):value is ActivityCode{
  return activityCatalog.some(a=>a.code===value);
+}
+export function isAssessmentCode(value:string):value is AssessmentCode{
+ return isActivityCode(value)||value==='six_cit_v1'||value==='tics_v1'||value==='moca_blind_v1';
 }
 export type Assignment={
  id:string;instrument_code:string;status:string;due_date:string|null;
@@ -54,5 +59,8 @@ export function wordMatchTokens(text:string,locale:string,scoreWords:boolean):{t
  }));
 }
 export function resultLabel(code:string){
+ if (code==='six_cit_v1') return 'weighted error score out of 28 (Kingshill format)';
+ if (code==='moca_blind_v1') return 'points earned out of 22 (MoCA Blind format)';
+ if (code==='tics_v1') return 'items evaluated';
  return code==='smriti_word_repeat_v1'?'target words repeated out of 5':code==='smriti_orientation_v1'?'correct answers out of 2':'distinct animals confirmed';
 }

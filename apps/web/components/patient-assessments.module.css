@@ -106,3 +106,12 @@
  .localAudioNote{font-size:14px}
 }
 @media(prefers-reduced-motion:reduce){.subtitleActive{animation:none}}
+.cardActions{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.voicePrimaryButton{display:inline-flex;align-items:center;gap:8px;min-height:50px;padding:11px 20px;border:none;border-radius:12px;background:#d82832;color:#fff;font:inherit;font-size:16px;font-weight:800;cursor:pointer;transition:background 0.15s ease}
+.voicePrimaryButton:hover{background:#b81f27}
+.manualSecondaryButton{display:inline-flex;align-items:center;gap:6px;min-height:46px;padding:9px 14px;border:1px solid #c9c6c0;border-radius:12px;background:#fff;color:#57534c;font:inherit;font-size:14px;font-weight:750;cursor:pointer}
+.badge{display:inline-flex;align-items:center;padding:3px 9px;border-radius:12px;font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.04em;margin-top:4px}
+.badgeClinical{background:#fde8e8;color:#9b1c1c;border:1px solid #f8b4b4}
+.badgeTrial{background:#faf4e2;color:#78580c;border:1px solid #f1ddaa}
+.voiceSessionContainer{position:fixed;inset:0;z-index:9999;background:#faf8f5}
+

@@ -1,7 +1,7 @@
 import {z} from 'zod';
 import {requireCare,CareError,failure} from '../../../../../lib/care';
 import {json,sameOrigin,limitedBody} from '../../../../../lib/auth/http';
-import {isActivityCode} from '../../../../../lib/assessment-activities';
+import {isAssessmentCode} from '../../../../../lib/assessment-activities';
 export const dynamic='force-dynamic';
 const uuid=z.uuid();
 const create=z.object({
@@ -24,7 +24,7 @@ export async function POST(request:Request){
   const raw=await limitedBody(request,1200);
   if(!raw)throw new CareError('invalid_request',400);
   const input=create.parse(JSON.parse(raw));
-  if(!isActivityCode(input.instrument_code))throw new CareError('invalid_assessment',400);
+  if(!isAssessmentCode(input.instrument_code))throw new CareError('invalid_assessment',400);
   const client=await requireCare();
   const {data,error}=await client.rpc('smriti_doctor_assessments',{
    operation:'assign',input:{

@@ -52,8 +52,10 @@ function CareNav({mode,expanded=false,doctor=false}:{mode:'desktop'|'mobile';exp
       <Mascot pillar="companionship"/>
      ):section.icon==='monitoring'?(
       <Mascot pillar="monitoring"/>
+     ):section.icon==='assessments'?(
+      <Mascot pillar="assessment"/>
      ):(
-      <span aria-hidden="true" className="smriti-doctor-nav-icon"><svg viewBox="0 0 24 24" width="23" height="23" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d={section.icon==='patients'?'M16 21v-2a5 5 0 0 0-10 0v2 M15 7a4 4 0 1 1-8 0 4 4 0 1 1 8 0':'M8 5H5v16h14V5h-3 M9 3h6v4H9z M8 14l3 3 5-6'}/></svg></span>
+      <span aria-hidden="true" className="smriti-doctor-nav-icon"><svg viewBox="0 0 24 24" width="23" height="23" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M16 21v-2a5 5 0 0 0-10 0v2 M15 7a4 4 0 1 1-8 0 4 4 0 1 1 8 0"/></svg></span>
      )}
      <span className="smriti-nav-label" aria-hidden={mode==='desktop'&&!expanded}>{section.label}</span>
     </Link>;

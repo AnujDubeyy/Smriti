@@ -3,11 +3,15 @@ import {DayFirstDate,displayDate} from './day-first-date';
 import {useEffect,useState} from 'react';
 import Link from 'next/link';
 import {useDemoCare,updateDemoCare,demoId} from '../lib/demo-care-store';
-import {activityCatalog,type Assignment,type ActivityCode} from '../lib/assessment-activities';
+import {type Assignment,type AssessmentCode} from '../lib/assessment-activities';
+import {STANDARDIZED_INSTRUMENTS,TRIAL_ACTIVITIES,findInstrument,isStandardizedInstrument} from '../lib/assessment/instruments';
 import {AssessmentResult} from './assessment-result';
 import {DoctorRecordingImport} from './doctor-recording-import';
+import {DoctorAssessmentReportModal} from './doctor-assessment-report-modal';
 import styles from './doctor-assessments.module.css';
+
 type Patient={patient_id:string;patient_name:string;caretaker_name:string;status:string;sharing_enabled:boolean};
+
 export function DoctorAssessmentManager({patients,initialPatient,localPreview=false}:{patients:Patient[];initialPatient?:string;localPreview?:boolean}){
  const [selected,setSelected]=useState(initialPatient&&patients.some(p=>p.patient_id===initialPatient)?initialPatient:patients[0]?.patient_id||'');
  const demo=useDemoCare();
@@ -18,13 +22,17 @@ export function DoctorAssessmentManager({patients,initialPatient,localPreview=fa
  const [dueDate,setDueDate]=useState('');
  const [message,setMessage]=useState('');
  const [error,setError]=useState('');
+ const [selectedReportAssignment,setSelectedReportAssignment]=useState<string|null>(null);
+
  const current=patients.find(p=>p.patient_id===selected);
+
  async function load(patientId:string,signal?:AbortSignal){
   const r=await fetch('/api/v1/doctor/assessments?patient_id='+encodeURIComponent(patientId),{cache:'no-store',signal});
   const j=await r.json().catch(()=>({error:'temporarily_unavailable'}));
   if(!r.ok)throw new Error(j.error||'temporarily_unavailable');
   return j.assignments as Assignment[];
  }
+
  useEffect(()=>{
   if(localPreview)return;
   if(!current?.sharing_enabled||current.status!=='joined'){return;}
@@ -43,11 +51,12 @@ export function DoctorAssessmentManager({patients,initialPatient,localPreview=fa
   const interval=setInterval(onFocus,15000);
   return()=>{controller.abort();clearInterval(interval);window.removeEventListener('focus',onFocus);};
  },[selected,current?.sharing_enabled,current?.status,localPreview]);
- async function assign(code:ActivityCode){
+
+ async function assign(code:AssessmentCode){
   if(!selected||busy||!current?.sharing_enabled)return;
   if(localPreview){
    updateDemoCare(state=>({...state,assignments:[...state.assignments,{id:demoId(),instrument_code:code,status:'assigned',due_date:dueDate||null,created_at:new Date().toISOString()}]}));
-   setMessage('Assigned to Ramesh. Open Patient view to see the notification and complete the activity.');return;
+   setMessage('Assigned to Ramesh. Open Patient view to see the notification and complete the voice assessment.');return;
   }
   setBusy(true);setError('');setMessage('');
   try{
@@ -58,7 +67,7 @@ export function DoctorAssessmentManager({patients,initialPatient,localPreview=fa
    const body=await response.json().catch(()=>({error:'temporarily_unavailable'}));
    if(!response.ok)throw new Error(body.error||'temporarily_unavailable');
    setAssignments(await load(selected));
-   setMessage('Assigned successfully. The activity now appears in the caretaker’s Assessment tab.');
+   setMessage('Assigned successfully. The assessment now appears in the patient/caretaker’s Assessment tab.');
   }catch(e){
    const reason=e instanceof Error?e.message:'temporarily_unavailable';
    const messages:Record<string,string>={
@@ -70,11 +79,12 @@ export function DoctorAssessmentManager({patients,initialPatient,localPreview=fa
    setError(messages[reason]||'The activity could not be assigned. Please try again.');
   }finally{setBusy(false);}
  }
+
  return <section className={styles.root}>
   <div className={styles.head}>
-   <span className={styles.eyebrow}>DOCTOR · ASSESSMENTS</span>
+   <span className={styles.eyebrow}>DOCTOR · COGNITIVE ASSESSMENTS</span>
    <h1>Assign an assessment</h1>
-   <p>Choose a connected patient and an spoken activity. Review the answer and activity count here after the caretaker submits it.</p>
+   <p>Choose a connected patient and an assessment. Administered by Smriti with hands-free voice interaction and audio-boundary response latency analysis.</p>
   </div>
   <DoctorRecordingImport/>
   {!patients.length?<div className={styles.card}>
@@ -97,26 +107,101 @@ export function DoctorAssessmentManager({patients,initialPatient,localPreview=fa
      <DayFirstDate value={dueDate} min={new Date().toISOString().slice(0,10)} onChange={setDueDate}/>
     </label>
    </div>
+
    {current?.sharing_enabled&&current.status==='joined'?<>
-    <h2 className={styles.subheading}>Choose an activity</h2>
+    {/* Section 1: Standardized Clinical Assessments */}
+    <header className={styles.sectionHeader}>
+     <h2>Standardized Clinical Assessments (Voice-Administered)</h2>
+     <p>Structured cognitive screenings administered deterministically by Smriti with hands-free voice interaction, millisecond response latency tracking, and clinical timeline reporting.</p>
+    </header>
+
+    <div className={styles.demoNotice} role="note">
+     <strong>Demonstration Mode Notice</strong>
+     Demonstration items and uncopyrighted practice materials are active for system verification. Official diagnostic scoring and clinical deployment for MoCA Blind and Kingshill 6CIT require institutional licensing, clinician administration certification, and publisher electronic permissions.
+    </div>
+
     <div className={styles.catalog}>
-     {activityCatalog.map(activity=>{
+     {STANDARDIZED_INSTRUMENTS.map(activity=>{
       const awaiting=assignments.some(a=>a.instrument_code===activity.code&&(a.status==='assigned'||a.status==='in_progress'));
       return <article key={activity.code} className={styles.activity}>
-       <div className={styles.activityTop}><strong>{activity.title}</strong><span>{activity.duration}</span></div>
+       <div className={styles.activityTop}>
+        <strong>{activity.title}</strong>
+        <span>{activity.estimatedDuration}</span>
+       </div>
+       <div className={styles.metaRow}>
+        <span className={`${styles.badge} ${styles.badgeClinical}`}>Voice Administered</span>
+        <span className={`${styles.badge} ${styles.badgeTrial}`}>Demo Mode</span>
+       </div>
        <p>{activity.description}</p>
-       <button type="button" disabled={busy||loading||awaiting||dueDate==='invalid'}
-        onClick={()=>void assign(activity.code)}>{awaiting?'Already assigned':busy?'Assigning…':'Assign to patient'}</button>
+       <small style={{color:'#655e55',fontSize:'12px',lineHeight:'1.4'}}>
+        <strong>Domains:</strong> {activity.clinicalPurpose}
+       </small>
+       <small style={{color:'#88681b',fontSize:'11px',fontWeight:700}}>
+        Languages: English (en-IN), हिन्दी (hi-IN), मराठी (mr-IN)
+       </small>
+       <button type="button" className={styles.clinicalButton} disabled={busy||loading||awaiting||dueDate==='invalid'}
+        onClick={()=>void assign(activity.code as AssessmentCode)}>{awaiting?'Already assigned':busy?'Assigning…':'Assign voice assessment'}</button>
       </article>;
      })}
     </div>
+
+    {/* Section 2: Trial / Familiarization Activities */}
+    <header className={styles.sectionHeader}>
+     <h2>Trial / Familiarization Activities</h2>
+     <p>Given by doctor to make patient and caregiver comfortable with the voice interface and microphone before standardized clinical assessments.</p>
+    </header>
+
+    <div className={styles.catalog}>
+     {TRIAL_ACTIVITIES.map(activity=>{
+      const awaiting=assignments.some(a=>a.instrument_code===activity.code&&(a.status==='assigned'||a.status==='in_progress'));
+      return <article key={activity.code} className={styles.activity}>
+       <div className={styles.activityTop}>
+        <strong>{activity.title}</strong>
+        <span>{activity.estimatedDuration}</span>
+       </div>
+       <div className={styles.metaRow}>
+        <span className={`${styles.badge} ${styles.badgeTrial}`}>Trial / Practice</span>
+       </div>
+       <p>{activity.description}</p>
+       <small style={{color:'#655e55',fontSize:'12px',lineHeight:'1.4'}}>
+        <strong>Purpose:</strong> {activity.clinicalPurpose}
+       </small>
+       <button type="button" disabled={busy||loading||awaiting||dueDate==='invalid'}
+        onClick={()=>void assign(activity.code as AssessmentCode)}>{awaiting?'Already assigned':busy?'Assigning…':'Assign trial exercise'}</button>
+      </article>;
+     })}
+    </div>
+
+    {/* Assigned Activities List */}
     <div className={styles.card}>
      <h2>Assigned activities</h2>
      {loading?<p role="status">Loading…</p>:assignments.length?<ul className={styles.assigned}>
       {assignments.map(a=>{
-       const title=activityCatalog.find(item=>item.code===a.instrument_code)?.title||'Activity';
-       return <li key={a.id}><strong>{title}</strong><span>{a.status==='submitted'?'Response submitted':a.status==='assigned'?'Awaiting response':a.status}</span>
-        {a.due_date?<small>Due {displayDate(a.due_date)}</small>:null}<AssessmentResult assignment={a}/></li>;
+       const inst=findInstrument(a.instrument_code);
+       const title=inst?.title||'Activity';
+       const isClinical=isStandardizedInstrument(a.instrument_code);
+       return <li key={a.id}>
+        <div style={{display:'flex',flexDirection:'column',gap:'4px',flex:1,minWidth:'220px'}}>
+         <div style={{display:'flex',alignItems:'center',gap:'8px'}}>
+          <strong>{title}</strong>
+          <span className={`${styles.badge} ${isClinical?styles.badgeClinical:styles.badgeTrial}`}>
+           {isClinical?'Clinical Assessment':'Trial Exercise'}
+          </span>
+         </div>
+         {a.due_date?<small>Due {displayDate(a.due_date)}</small>:null}
+        </div>
+        <span className={a.status==='submitted'?styles.badgeSuccess:undefined}>
+         {a.status==='submitted'?'Response submitted':a.status==='assigned'?'Awaiting response':a.status}
+        </span>
+        <button
+         type="button"
+         className={styles.reportBtn}
+         onClick={()=>setSelectedReportAssignment(a.id)}
+        >
+         View Clinical Voice Report
+        </button>
+        <AssessmentResult assignment={a}/>
+       </li>;
       })}
      </ul>:<p>No activities have been assigned to this patient.</p>}
     </div>
@@ -125,5 +210,12 @@ export function DoctorAssessmentManager({patients,initialPatient,localPreview=fa
    {error?<p className={styles.error} role="alert">{error}</p>:null}
   </>}
   <Link href="/doctor" className={styles.back}>Back to doctor workspace</Link>
+
+  {selectedReportAssignment && (
+   <DoctorAssessmentReportModal
+    assignmentId={selectedReportAssignment}
+    onClose={()=>setSelectedReportAssignment(null)}
+   />
+  )}
  </section>;
 }

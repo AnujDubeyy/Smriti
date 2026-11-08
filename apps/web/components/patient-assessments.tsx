@@ -2,6 +2,8 @@
 import {useEffect,useState} from 'react';
 import {useDemoCare,updateDemoCare} from '../lib/demo-care-store';
 import {activityCatalog,isActivityCode,type Assignment,wordMatchTokens,wordMatches} from '../lib/assessment-activities';
+import {findInstrument,isStandardizedInstrument,type ActivityLocale} from '../lib/assessment/instruments';
+import type {SpokenItemPrompt} from '../lib/assessment/prompts';
 import {AssessmentResult} from './assessment-result';
 import {AssessmentRecorder,type RecorderState} from './assessment-recorder';
 import {displayDate} from './day-first-date';
@@ -9,10 +11,25 @@ import {AssessmentPrompt} from './assessment-prompt';
 import {AssessmentRecordingLibrary} from './assessment-recording-library';
 import {saveAssessmentRecording,updateAssessmentRecordingTranscript} from '../lib/assessment-recordings';
 import {Mascot} from './brand';
+import {AssessmentPreflightModal} from './assessment-preflight-modal';
+import {VoiceAssessmentSession} from './voice-assessment-session';
 import styles from './patient-assessments.module.css';
 
 const localeNames:Record<string,string>={'en-IN':'English','hi-IN':'हिन्दी · Hindi','mr-IN':'मराठी · Marathi'};
 function BackIcon(){return <svg viewBox="0 0 24 24" width="19" height="19" aria-hidden="true" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m15 18-6-6 6-6M9 12h12"/></svg>}
+
+interface ActiveVoiceSessionState {
+ sessionId:string;
+ assignmentId:string;
+ instrumentCode:string;
+ instrumentTitle:string;
+ locale:ActivityLocale;
+ totalItems:number;
+ initialItemIndex:number;
+ initialItemTitle:string;
+ initialPrompt?:SpokenItemPrompt;
+ timeLimitSeconds?:number;
+}
 
 export function PatientAssessments({patientId,name,locale,initial,localPreview=false}:{
  patientId:string;name:string;locale:string;initial:Assignment[];localPreview?:boolean
@@ -21,7 +38,7 @@ export function PatientAssessments({patientId,name,locale,initial,localPreview=f
  const [liveAssignments,setAssignments]=useState(initial);
  const assignments=localPreview?demo.assignments:liveAssignments;
  const [selected,setSelected]=useState<string|null>(null);
- const [language,setLanguage]=useState(locale||'en-IN');
+ const [language,setLanguage]=useState<ActivityLocale>((locale as ActivityLocale)||'en-IN');
  const [count,setCount]=useState('');
  const [recording,setRecording]=useState(false);
  const [recorderState,setRecorderState]=useState<RecorderState>('idle');
@@ -39,6 +56,10 @@ export function PatientAssessments({patientId,name,locale,initial,localPreview=f
  const [recordingLibraryVersion,setRecordingLibraryVersion]=useState(0);
  const [activeRecordingId,setActiveRecordingId]=useState('');
 
+ // Voice Assessment Engine States
+ const [preflightAssignment,setPreflightAssignment]=useState<Assignment|null>(null);
+ const [activeVoiceSession,setActiveVoiceSession]=useState<ActiveVoiceSessionState|null>(null);
+
  useEffect(()=>{
   if(!timerActive)return;
   const interval=window.setInterval(()=>setRemaining(v=>{
@@ -47,11 +68,13 @@ export function PatientAssessments({patientId,name,locale,initial,localPreview=f
   }),1000);
   return()=>window.clearInterval(interval);
  },[timerActive]);
+
  useEffect(()=>{
   if(localPreview)return;const controller=new AbortController();
   const refresh=()=>{if(document.hidden)return;fetch('/api/v1/caretaker/assessments',{cache:'no-store',signal:controller.signal}).then(r=>{if(!r.ok)throw new Error();return r.json();}).then(data=>setAssignments(data.assignments)).catch(()=>{});};
   const timer=setInterval(refresh,15000);window.addEventListener('focus',refresh);return()=>{controller.abort();clearInterval(timer);window.removeEventListener('focus',refresh);};
  },[localPreview]);
+
  useEffect(()=>{
   if(!activeRecordingId)return;
   const timer=window.setTimeout(()=>{void updateAssessmentRecordingTranscript(activeRecordingId,reply).then(()=>setRecordingLibraryVersion(value=>value+1)).catch(()=>{});},350);
@@ -62,8 +85,70 @@ export function PatientAssessments({patientId,name,locale,initial,localPreview=f
  const completed=assignments.filter(a=>a.status!=='assigned');
  const chosen=assignments.find(a=>a.id===selected);
  const code=chosen&&isActivityCode(chosen.instrument_code)?chosen.instrument_code:null;
- const title=code?activityCatalog.find(a=>a.code===code)?.title:'Assessment';
+ const title=code?activityCatalog.find(a=>a.code===code)?.title:chosen?findInstrument(chosen.instrument_code)?.title:'Assessment';
  const score=code==='smriti_word_repeat_v1'?wordMatches(reply,language):Number(count||0);
+
+ async function handleLaunchVoice(assignment:Assignment,selectedLocale:ActivityLocale,proctorPresent:boolean){
+  setPreflightAssignment(null);
+  setError('');
+  setMessage('');
+  setBusy(true);
+
+  try{
+   const response=await fetch('/api/v1/assessment/sessions/start',{
+    method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({
+     patient_id:patientId,
+     assignment_id:assignment.id,
+     instrument_code:assignment.instrument_code,
+     locale:selectedLocale,
+     proctor_present:proctorPresent
+    })
+   });
+   const data=await response.json().catch(()=>({error:'temporarily_unavailable'}));
+   if(!response.ok)throw new Error(data.error||'temporarily_unavailable');
+
+   setActiveVoiceSession({
+    sessionId:data.session_id,
+    assignmentId:assignment.id,
+    instrumentCode:data.instrument.code,
+    instrumentTitle:data.instrument.title,
+    locale:selectedLocale,
+    totalItems:data.instrument.totalItems,
+    initialItemIndex:data.first_item.index,
+    initialItemTitle:data.first_item.title,
+    initialPrompt:data.first_item.prompt,
+    timeLimitSeconds:data.first_item.time_limit_seconds
+   });
+  }catch{
+   setError('Unable to launch voice assessment session. Please verify microphone permissions.');
+  }finally{
+   setBusy(false);
+  }
+ }
+
+ function handleSessionComplete(){
+  if(activeVoiceSession){
+   if(localPreview){
+    updateDemoCare(state=>({
+     ...state,
+     assignments:state.assignments.map(a=>
+      a.id===activeVoiceSession.assignmentId
+       ?{...a,status:'submitted',submitted_at:new Date().toISOString(),response_text:'Completed via hands-free voice assessment session.'}
+       :a
+     )
+    }));
+   }else{
+    fetch('/api/v1/caretaker/assessments',{cache:'no-store'})
+     .then(r=>r.json())
+     .then(data=>setAssignments(data.assignments||[]))
+     .catch(()=>{});
+   }
+  }
+  setActiveVoiceSession(null);
+  setMessage('Voice assessment completed. Smriti has securely recorded your responses and response timing for your clinician.');
+ }
 
  async function analyzeAnimalCount(transcript:string){
   const text=transcript.trim();if(code!=='smriti_category_fluency_v1'||!text)return;
@@ -117,17 +202,23 @@ export function PatientAssessments({patientId,name,locale,initial,localPreview=f
 
  return <section className={styles.root}>
   <header className={styles.pageHead}>
-   <div><p className={styles.eyebrow}>ASSESSMENT</p><h1>Activities for {name}</h1>
-    <p className={styles.intro}>Take one activity at a time. You can listen again or type the patient’s response.</p></div>
+   <div>
+    <p className={styles.eyebrow}>ASSESSMENT</p>
+    <h1>Activities for {name}</h1>
+    <p className={styles.intro}>Complete assessments naturally by voice. Smriti guides each step without requiring typing.</p>
+   </div>
    <span className={styles.activityCount}>{pending.length} {pending.length===1?'activity':'activities'} to do</span>
   </header>
+
   {message?<p role="status" className={styles.success}>{message}</p>:null}
   {error&&!chosen?<p role="alert" className={styles.error}>{error}</p>:null}
+
+  {/* Fallback Manual Caretaker Recording Flow */}
   {chosen&&code?<section className={styles.activity} aria-labelledby="active-assessment-title">
    <button className={styles.back} type="button" disabled={recording||busy} onClick={()=>{setSelected(null);setTimerActive(false);setRemaining(60);setError('');setRecorderState('idle');}}><BackIcon/> All activities</button>
    <div className={styles.activityHeading}>
-    <div className={styles.activityTitle}><Mascot pillar="assessment"/><div><p className={styles.kicker}>YOUR ASSIGNED ACTIVITY</p><h2 id="active-assessment-title">{title}</h2></div></div>
-    <label className={styles.language}>Prompt language<select value={language} disabled={recording||busy} onChange={e=>{setLanguage(e.target.value);setCount('');setReply('');}}>
+    <div className={styles.activityTitle}><Mascot pillar="assessment"/><div><p className={styles.kicker}>CARETAKER RECORDING MODE</p><h2 id="active-assessment-title">{title}</h2></div></div>
+    <label className={styles.language}>Prompt language<select value={language} disabled={recording||busy} onChange={e=>{setLanguage(e.target.value as ActivityLocale);setCount('');setReply('');}}>
      <option value="en-IN">English</option><option value="hi-IN">हिन्दी · Hindi</option><option value="mr-IN">मराठी · Marathi</option></select></label>
    </div>
    <div className={styles.sessionGrid}>
@@ -178,14 +269,90 @@ export function PatientAssessments({patientId,name,locale,initial,localPreview=f
   </section>:<>
    <h2 className={styles.section}>Assigned activities</h2>
    {pending.length?<div className={styles.list}>{pending.map(a=>{
-    const activity=activityCatalog.find(x=>x.code===a.instrument_code);if(!activity)return null;
+    const inst=findInstrument(a.instrument_code);
+    const legacyActivity=activityCatalog.find(x=>x.code===a.instrument_code);
+    const itemTitle=inst?.title||legacyActivity?.title||'Assessment';
+    const itemDesc=inst?.description||legacyActivity?.description||'';
+    const isClinical=isStandardizedInstrument(a.instrument_code);
+
     return <article className={styles.card} key={a.id}>
-     <div className={styles.cardIdentity}><Mascot pillar="assessment"/><div><strong>{activity.title}</strong><p>{activity.description}</p>{a.due_date?<small>Due {displayDate(a.due_date)}</small>:null}</div></div>
-     <button type="button" className={styles.begin} onClick={()=>selectActivity(a.id)}>Begin activity <span aria-hidden="true">→</span></button>
+     <div className={styles.cardIdentity}>
+      <Mascot pillar="assessment"/>
+      <div>
+       <strong>{itemTitle}</strong>
+       <span className={`${styles.badge} ${isClinical?styles.badgeClinical:styles.badgeTrial}`}>
+        {isClinical?'Clinical Voice Assessment':'Trial Practice'}
+       </span>
+       <p>{itemDesc}</p>
+       {a.due_date?<small>Due {displayDate(a.due_date)}</small>:null}
+      </div>
+     </div>
+     <div className={styles.cardActions}>
+      <button
+       type="button"
+       className={styles.voicePrimaryButton}
+       onClick={()=>setPreflightAssignment(a)}
+      >
+       Begin Voice Assessment 🎙️
+      </button>
+      {!isClinical && (
+       <button
+        type="button"
+        className={styles.manualSecondaryButton}
+        onClick={()=>selectActivity(a.id)}
+       >
+        Manual recording
+       </button>
+      )}
+     </div>
     </article>;
    })}</div>:<div className={styles.empty}><Mascot pillar="assessment"/><div><strong>No activities assigned yet</strong><p>Your doctor’s next activity will appear here.</p></div></div>}
-   {completed.length?<section className={styles.completed}><h2>Submitted activities</h2><ul>{completed.map(a=><li key={a.id}><strong>{activityCatalog.find(x=>x.code===a.instrument_code)?.title||'Activity'}</strong><span>{a.status}</span><AssessmentResult assignment={a}/></li>)}</ul></section>:null}
+
+   {completed.length?<section className={styles.completed}>
+    <h2>Submitted activities</h2>
+    <ul>{completed.map(a=>{
+     const inst=findInstrument(a.instrument_code);
+     const title=inst?.title||activityCatalog.find(x=>x.code===a.instrument_code)?.title||'Activity';
+     return <li key={a.id}>
+      <strong>{title}</strong>
+      <span>{a.status}</span>
+      <AssessmentResult assignment={a}/>
+     </li>;
+    })}</ul>
+   </section>:null}
   </>}
+
   <AssessmentRecordingLibrary ownerId={patientId} refreshKey={recordingLibraryVersion}/>
+
+  {/* Preflight Modal */}
+  {preflightAssignment && (
+   <AssessmentPreflightModal
+    instrumentTitle={findInstrument(preflightAssignment.instrument_code)?.title||'Assessment'}
+    category={isStandardizedInstrument(preflightAssignment.instrument_code)?'standardized':'trial'}
+    initialLocale={language}
+    onConfirm={(selLocale,proctor)=>void handleLaunchVoice(preflightAssignment,selLocale,proctor)}
+    onCancel={()=>setPreflightAssignment(null)}
+   />
+  )}
+
+  {/* Fullscreen Hands-Free Voice Assessment Call Session */}
+  {activeVoiceSession && (
+   <div className={styles.voiceSessionContainer}>
+    <VoiceAssessmentSession
+     sessionId={activeVoiceSession.sessionId}
+     patientId={patientId}
+     instrumentCode={activeVoiceSession.instrumentCode}
+     instrumentTitle={activeVoiceSession.instrumentTitle}
+     locale={activeVoiceSession.locale}
+     totalItems={activeVoiceSession.totalItems}
+     initialItemIndex={activeVoiceSession.initialItemIndex}
+     initialItemTitle={activeVoiceSession.initialItemTitle}
+     initialPrompt={activeVoiceSession.initialPrompt}
+     timeLimitSeconds={activeVoiceSession.timeLimitSeconds}
+     onSessionComplete={handleSessionComplete}
+     onExit={()=>setActiveVoiceSession(null)}
+    />
+   </div>
+  )}
  </section>;
 }

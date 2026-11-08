@@ -27,3 +27,20 @@
 .success{background:#edf6eb;color:#33532b}.error{background:#fff1ef;color:#922923}
 .back,.link{display:inline-block;margin-top:24px;font-weight:800;font-size:14px;color:#63521d}
 .assigned details{flex-basis:100%;overflow-wrap:anywhere}.assigned summary{cursor:pointer;font-weight:750;padding:6px 0}
+.sectionHeader{margin:32px 0 16px}
+.sectionHeader h2{font-size:22px;margin:0 0 6px;color:#1e1a17}
+.sectionHeader p{margin:0;font-size:14px;color:#655e55;line-height:1.5}
+.demoNotice{margin:16px 0 20px;padding:14px 18px;border-radius:12px;background:#fff8e6;border:1px solid #fed888;color:#705307;font-size:13px;line-height:1.5}
+.demoNotice strong{display:block;margin-bottom:4px;color:#5a4103}
+.badge{display:inline-flex;align-items:center;padding:3px 9px;border-radius:12px;font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.04em}
+.badgeClinical{background:#fde8e8;color:#9b1c1c;border:1px solid #f8b4b4}
+.badgeTrial{background:#faf4e2;color:#78580c;border:1px solid #f1ddaa}
+.badgePending{background:#f3f4f6;color:#4b5563;border:1px solid #e5e7eb}
+.badgeSuccess{background:#def7ec;color:#03543f;border:1px solid #bcf0da}
+.metaRow{display:flex;align-items:center;flex-wrap:wrap;gap:8px;margin-top:4px}
+.clinicalButton{width:100%;min-height:48px;border:1px solid #c22026;border-radius:11px;background:#d82832;color:white;font-weight:850;padding:10px;cursor:pointer;transition:background 0.15s ease}
+.clinicalButton:hover{background:#b81f27}
+.clinicalButton:disabled{background:#f0ede6;color:#6d6b67;border-color:#e5e1d8;cursor:not-allowed}
+.reportBtn{background:#1556e8;color:white;border:none;padding:6px 14px;border-radius:8px;font-size:12px;font-weight:750;cursor:pointer;transition:background 0.15s ease}
+.reportBtn:hover{background:#0e41b5}
+
