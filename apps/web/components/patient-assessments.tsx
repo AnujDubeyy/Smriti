@@ -156,7 +156,13 @@ export function PatientAssessments({patientId,name,locale,initial,localPreview=f
      .then(data=>setAssignments(data.assignments||[]))
      .catch(()=>{});
    }
+   setAssignments(items=>items.map(item=>
+    item.id===activeVoiceSession.assignmentId
+     ?{...item,status:'submitted',submitted_at:new Date().toISOString(),response_text:'Completed via hands-free voice assessment session.'}
+     :item
+   ));
   }
+  setRecordingLibraryVersion(value=>value+1);
   setActiveVoiceSession(null);
   setMessage('Voice assessment completed. Smriti has securely recorded your responses and response timing for your clinician.');
  }
@@ -361,7 +367,9 @@ export function PatientAssessments({patientId,name,locale,initial,localPreview=f
    <div className={styles.voiceSessionContainer}>
     <VoiceAssessmentSession
      sessionId={activeVoiceSession.sessionId}
+     assignmentId={activeVoiceSession.assignmentId}
      patientId={patientId}
+     patientName={name}
      instrumentCode={activeVoiceSession.instrumentCode}
      instrumentTitle={activeVoiceSession.instrumentTitle}
      locale={activeVoiceSession.locale}

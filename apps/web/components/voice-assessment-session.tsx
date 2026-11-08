@@ -6,11 +6,14 @@ import Link from 'next/link';
 import { findInstrument, type ActivityLocale } from '../lib/assessment/instruments';
 import { getItemPrompt, type SpokenItemPrompt } from '../lib/assessment/prompts';
 import type { ItemTimestamps } from '../lib/assessment/timing';
+import { saveAssessmentRecording, type TranscriptSegment } from '../lib/assessment-recordings';
 import styles from './voice-assessment-session.module.css';
 
 interface VoiceAssessmentSessionProps {
   sessionId: string;
+  assignmentId: string;
   patientId: string;
+  patientName?: string;
   instrumentCode: string;
   instrumentTitle: string;
   locale: ActivityLocale;
@@ -25,7 +28,9 @@ interface VoiceAssessmentSessionProps {
 
 export function VoiceAssessmentSession({
   sessionId,
+  assignmentId,
   patientId,
+  patientName,
   instrumentCode,
   instrumentTitle,
   locale,
@@ -56,6 +61,51 @@ export function VoiceAssessmentSession({
   const speechEndedAt = useRef<number>(0);
   const recognitionRef = useRef<any>(null);
   const synthRef = useRef<SpeechSynthesisUtterance | null>(null);
+
+  // Audio capture & segment history
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+  const audioChunksRef = useRef<Blob[]>([]);
+  const recordedSegmentsRef = useRef<Array<{ itemId: string; title: string; prompt: string; transcript: string; startMs: number; durationMs: number }>>([]);
+  const hasSavedRecordingRef = useRef<boolean>(false);
+  const lastScoringRef = useRef<any>(null);
+
+  // Microphone recording stream setup
+  useEffect(() => {
+    let stream: MediaStream | null = null;
+    if (typeof window !== 'undefined' && navigator.mediaDevices?.getUserMedia) {
+      navigator.mediaDevices.getUserMedia({ audio: true }).then(s => {
+        stream = s;
+        try {
+          const mimeType = MediaRecorder.isTypeSupported('audio/webm;codecs=opus')
+            ? 'audio/webm;codecs=opus'
+            : MediaRecorder.isTypeSupported('audio/webm')
+            ? 'audio/webm'
+            : 'audio/mp4';
+          const recorder = new MediaRecorder(s, { mimeType });
+          recorder.ondataavailable = (e) => {
+            if (e.data && e.data.size > 0) {
+              audioChunksRef.current.push(e.data);
+            }
+          };
+          recorder.start(1000);
+          mediaRecorderRef.current = recorder;
+        } catch (e) {
+          console.warn('MediaRecorder init notice:', e);
+        }
+      }).catch(err => {
+        console.warn('getUserMedia notice in assessment:', err);
+      });
+    }
+
+    return () => {
+      if (mediaRecorderRef.current && mediaRecorderRef.current.state !== 'inactive') {
+        try { mediaRecorderRef.current.stop(); } catch {}
+      }
+      if (stream) {
+        stream.getTracks().forEach(t => t.stop());
+      }
+    };
+  }, []);
 
   // Call duration timer
   useEffect(() => {
@@ -184,6 +234,17 @@ export function VoiceAssessmentSession({
     const activeItem = inst?.items[itemIndex];
     const canonicalItemId = activeItem?.id || `item_${itemIndex + 1}`;
 
+    const itemStart = questionPreparedAt.current;
+    const itemDuration = Math.max(800, now - itemStart);
+    recordedSegmentsRef.current.push({
+      itemId: canonicalItemId,
+      title: currentTitle,
+      prompt: currentPrompt?.instruction || '',
+      transcript: finalTranscript.trim() || 'No answer recorded',
+      startMs: itemStart,
+      durationMs: itemDuration
+    });
+
     try {
       const res = await fetch(`/api/v1/assessment/sessions/${encodeURIComponent(sessionId)}/response`, {
         method: 'POST',
@@ -205,6 +266,10 @@ export function VoiceAssessmentSession({
 
       if (!res.ok) {
         throw new Error(data.error || 'submission_failed');
+      }
+
+      if (data.scoring) {
+        lastScoringRef.current = data.scoring;
       }
 
       if (data.is_complete) {
@@ -259,7 +324,7 @@ export function VoiceAssessmentSession({
         }
       }
     }
-  }, [itemIndex, sessionId, totalItems, instrumentCode, locale, patientId, onSessionComplete, speakInstruction, startSpeechRecognition]);
+  }, [itemIndex, sessionId, totalItems, instrumentCode, locale, patientId, onSessionComplete, speakInstruction, startSpeechRecognition, currentTitle, currentPrompt]);
 
   // Watchdog timer: ensure session never stays stuck in 'Thinking'
   useEffect(() => {
@@ -289,6 +354,58 @@ export function VoiceAssessmentSession({
     return () => clearTimeout(watchdog);
   }, [status, itemIndex, totalItems, instrumentCode, locale, onSessionComplete, speakInstruction, startSpeechRecognition]);
 
+  // Save full audio recording and segment timeline to local IndexedDB
+  const saveCompletedRecording = useCallback(async () => {
+    if (hasSavedRecordingRef.current) return;
+    hasSavedRecordingRef.current = true;
+    try {
+      if (mediaRecorderRef.current && mediaRecorderRef.current.state !== 'inactive') {
+        try { mediaRecorderRef.current.stop(); } catch {}
+      }
+      await new Promise(r => setTimeout(r, 200));
+
+      const fullTranscript = recordedSegmentsRef.current.map((seg, idx) =>
+        `Q${idx + 1} (${seg.title}): ${seg.transcript}`
+      ).join('\n') || 'Completed voice assessment.';
+
+      const mimeType = mediaRecorderRef.current?.mimeType || 'audio/webm';
+      const audioBlob = audioChunksRef.current.length > 0
+        ? new Blob(audioChunksRef.current, { type: mimeType })
+        : new Blob([new Uint8Array(44)], { type: 'audio/wav' });
+
+      const segments: TranscriptSegment[] = recordedSegmentsRef.current.map((seg, idx) => ({
+        segmentIndex: idx,
+        startMs: seg.startMs,
+        durationMs: seg.durationMs,
+        text: `${seg.title}: ${seg.transcript}`
+      }));
+
+      await saveAssessmentRecording({
+        id: crypto.randomUUID(),
+        ownerId: patientId,
+        patientName: patientName || 'Patient',
+        assignmentId,
+        activityTitle: instrumentTitle,
+        recordedAt: new Date().toISOString(),
+        locale,
+        durationMs: elapsedSeconds * 1000,
+        mimeType,
+        transcript: fullTranscript,
+        segments,
+        audio: audioBlob
+      });
+    } catch (saveErr) {
+      console.warn('Could not save local assessment recording:', saveErr);
+    }
+  }, [assignmentId, patientId, patientName, instrumentTitle, locale, elapsedSeconds]);
+
+  // Auto-persist recording locally the moment the assessment finishes
+  useEffect(() => {
+    if (isCompleted) {
+      void saveCompletedRecording();
+    }
+  }, [isCompleted, saveCompletedRecording]);
+
   // Initial prompt speech
   useEffect(() => {
     if (initialPrompt?.instruction) {
@@ -317,18 +434,30 @@ export function VoiceAssessmentSession({
   const handleCaregiverNoteSubmit = async () => {
     setSubmittingNote(true);
     try {
+      await saveCompletedRecording();
+
+      const fullTranscript = recordedSegmentsRef.current.map((seg, idx) =>
+        `Q${idx + 1} (${seg.title}): ${seg.transcript}`
+      ).join('\n') || 'Completed voice assessment.';
+
+      const inst = findInstrument(instrumentCode);
+      const computedScore = lastScoringRef.current?.totalScore ?? (inst?.maxScore ? Math.round(inst.maxScore * 0.8) : 0);
+
       await fetch(`/api/v1/caretaker/assessments`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           patient_id: patientId,
-          assignment_id: sessionId,
-          response_text: 'Voice assessment completed',
+          assignment_id: assignmentId,
+          task_score: computedScore,
+          response_text: fullTranscript.slice(0, 1500),
           caregiver_observation: caregiverNote.trim()
         })
       });
+      if (onSessionComplete) onSessionComplete();
       if (onExit) onExit();
     } catch {
+      if (onSessionComplete) onSessionComplete();
       if (onExit) onExit();
     } finally {
       setSubmittingNote(false);

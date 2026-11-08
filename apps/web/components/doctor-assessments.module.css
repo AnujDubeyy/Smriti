@@ -16,8 +16,11 @@
 .activityTop strong{font-size:17px;line-height:1.35}
 .activityTop span{flex:none;background:#faf4e2;border-radius:20px;padding:4px 8px;font-size:12px}
 .activity p{font-size:13px;line-height:1.6;color:#655e55;flex:1}
-.activity button{width:100%;min-height:48px;border:1px solid #b89119;border-radius:11px;background:#ffca28;font-weight:850;padding:10px}
-.activity button:disabled{background:#f0ede6;color:#6d6b67;border-color:#e5e1d8}
+.activity button{width:100%;min-height:48px;border:1px solid #b89119;border-radius:11px;background:#ffca28;color:#000000;font-weight:850;padding:10px;cursor:pointer;transition:background 0.15s ease}
+.activity button:hover:not(:disabled){background:#f5b800}
+.activity button:disabled{background:#f0ede6;color:#6d6b67;border-color:#e5e1d8;cursor:not-allowed}
+.activity .clinicalButton{background:#ffca28;color:#000000;border:1px solid #b89119}
+.activity .clinicalButton:hover:not(:disabled){background:#f5b800}
 .assigned{list-style:none;padding:0;display:grid;gap:12px;margin:16px 0 0}
 .assigned li{display:flex;align-items:center;flex-wrap:wrap;gap:7px 14px;border-bottom:1px solid #eee8dd;padding:10px 0;font-size:13px}
 .assigned li strong{flex:1;min-width:160px;font-size:14px}
@@ -38,8 +41,8 @@
 .badgePending{background:#f3f4f6;color:#4b5563;border:1px solid #e5e7eb}
 .badgeSuccess{background:#def7ec;color:#03543f;border:1px solid #bcf0da}
 .metaRow{display:flex;align-items:center;flex-wrap:wrap;gap:8px;margin-top:4px}
-.clinicalButton{width:100%;min-height:48px;border:1px solid #c22026;border-radius:11px;background:#d82832;color:white;font-weight:850;padding:10px;cursor:pointer;transition:background 0.15s ease}
-.clinicalButton:hover{background:#b81f27}
+.clinicalButton{width:100%;min-height:48px;border:1px solid #b89119;border-radius:11px;background:#ffca28;color:#000000;font-weight:850;padding:10px;cursor:pointer;transition:background 0.15s ease}
+.clinicalButton:hover:not(:disabled){background:#f5b800}
 .clinicalButton:disabled{background:#f0ede6;color:#6d6b67;border-color:#e5e1d8;cursor:not-allowed}
 .reportBtn{background:#1556e8;color:white;border:none;padding:6px 14px;border-radius:8px;font-size:12px;font-weight:750;cursor:pointer;transition:background 0.15s ease}
 .reportBtn:hover{background:#0e41b5}

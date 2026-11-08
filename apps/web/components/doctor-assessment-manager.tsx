@@ -268,6 +268,9 @@ export function DoctorAssessmentManager({patients,initialPatient,localPreview=fa
   {selectedReportAssignment && (
    <DoctorAssessmentReportModal
     assignmentId={selectedReportAssignment}
+    patientId={selected}
+    patientName={current?.patient_name}
+    assignment={assignments.find(a=>a.id===selectedReportAssignment)}
     onClose={()=>setSelectedReportAssignment(null)}
    />
   )}
