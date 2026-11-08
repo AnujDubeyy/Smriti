@@ -3,8 +3,8 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
-import type { ActivityLocale } from '../lib/assessment/instruments';
-import type { SpokenItemPrompt } from '../lib/assessment/prompts';
+import { findInstrument, type ActivityLocale } from '../lib/assessment/instruments';
+import { getItemPrompt, type SpokenItemPrompt } from '../lib/assessment/prompts';
 import type { ItemTimestamps } from '../lib/assessment/timing';
 import styles from './voice-assessment-session.module.css';
 
@@ -180,42 +180,114 @@ export function VoiceAssessmentSession({
       answer_finalized_at: now
     };
 
+    const inst = findInstrument(instrumentCode);
+    const activeItem = inst?.items[itemIndex];
+    const canonicalItemId = activeItem?.id || `item_${itemIndex + 1}`;
+
     try {
       const res = await fetch(`/api/v1/assessment/sessions/${encodeURIComponent(sessionId)}/response`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          item_id: `item_${itemIndex + 1}`,
+          item_id: canonicalItemId,
+          instrument_code: instrumentCode,
+          locale,
+          patient_id: patientId,
+          item_index: itemIndex,
           verbatim_transcript: finalTranscript.trim() || 'No answer recorded',
           timestamps,
           stt_confidence: 0.92
         })
       });
 
-      const data = await res.json();
+      const data = await res.json().catch(() => ({}));
       setLiveTranscript('');
+
+      if (!res.ok) {
+        throw new Error(data.error || 'submission_failed');
+      }
 
       if (data.is_complete) {
         setIsCompleted(true);
         setStatus('Completed');
         if (onSessionComplete) onSessionComplete();
       } else if (data.next_item) {
-        setItemIndex(data.current_item_index);
+        const nextIdx = data.current_item_index ?? (itemIndex + 1);
+        setItemIndex(nextIdx);
         setCurrentTitle(data.next_item.title);
         setCurrentPrompt(data.next_item.prompt);
         speakInstruction(data.next_item.prompt?.instruction || '');
+      } else {
+        const nextIdx = (data.current_item_index !== undefined) ? data.current_item_index : itemIndex + 1;
+        if (nextIdx >= totalItems) {
+          setIsCompleted(true);
+          setStatus('Completed');
+          if (onSessionComplete) onSessionComplete();
+        } else {
+          const nextItem = inst?.items[nextIdx];
+          const nextPrompt = nextItem ? getItemPrompt(instrumentCode, nextItem.id, locale) : undefined;
+          setItemIndex(nextIdx);
+          setCurrentTitle(nextItem?.title || `Question ${nextIdx + 1}`);
+          setCurrentPrompt(nextPrompt);
+          if (nextPrompt?.instruction) {
+            speakInstruction(nextPrompt.instruction);
+          } else {
+            setStatus('Listening');
+            startSpeechRecognition();
+          }
+        }
       }
     } catch (err) {
-      console.error('Failed to submit item response:', err);
-      // Advance locally to prevent session stall
-      if (itemIndex + 1 >= totalItems) {
+      console.warn('Item response fallback, advancing local assessment:', err);
+      setLiveTranscript('');
+      const nextIdx = itemIndex + 1;
+      if (nextIdx >= totalItems) {
         setIsCompleted(true);
         setStatus('Completed');
+        if (onSessionComplete) onSessionComplete();
       } else {
-        setItemIndex(prev => prev + 1);
+        const nextItem = inst?.items[nextIdx];
+        const nextPrompt = nextItem ? getItemPrompt(instrumentCode, nextItem.id, locale) : undefined;
+        setItemIndex(nextIdx);
+        setCurrentTitle(nextItem?.title || `Question ${nextIdx + 1}`);
+        setCurrentPrompt(nextPrompt);
+        if (nextPrompt?.instruction) {
+          speakInstruction(nextPrompt.instruction);
+        } else {
+          setStatus('Listening');
+          startSpeechRecognition();
+        }
       }
     }
-  }, [itemIndex, sessionId, totalItems, onSessionComplete, speakInstruction]);
+  }, [itemIndex, sessionId, totalItems, instrumentCode, locale, patientId, onSessionComplete, speakInstruction, startSpeechRecognition]);
+
+  // Watchdog timer: ensure session never stays stuck in 'Thinking'
+  useEffect(() => {
+    if (status !== 'Thinking') return;
+    const watchdog = setTimeout(() => {
+      console.warn('Thinking state watchdog fired, forcing progression to next item');
+      const nextIdx = itemIndex + 1;
+      if (nextIdx >= totalItems) {
+        setIsCompleted(true);
+        setStatus('Completed');
+        if (onSessionComplete) onSessionComplete();
+      } else {
+        const inst = findInstrument(instrumentCode);
+        const nextItem = inst?.items[nextIdx];
+        const nextPrompt = nextItem ? getItemPrompt(instrumentCode, nextItem.id, locale) : undefined;
+        setItemIndex(nextIdx);
+        setCurrentTitle(nextItem?.title || `Question ${nextIdx + 1}`);
+        setCurrentPrompt(nextPrompt);
+        if (nextPrompt?.instruction) {
+          speakInstruction(nextPrompt.instruction);
+        } else {
+          setStatus('Listening');
+          startSpeechRecognition();
+        }
+      }
+    }, 4500);
+    return () => clearTimeout(watchdog);
+  }, [status, itemIndex, totalItems, instrumentCode, locale, onSessionComplete, speakInstruction, startSpeechRecognition]);
 
   // Initial prompt speech
   useEffect(() => {
@@ -372,10 +444,26 @@ export function VoiceAssessmentSession({
             <span>{liveTranscript || 'Start speaking when ready…'}</span>
           </div>
         )}
+
+        <p className={styles.advanceHint}>
+          💡 Speak naturally. Smriti moves forward automatically after you answer, or tap <strong>Next Question ➔</strong> anytime.
+        </p>
       </div>
 
       {/* Control Actions */}
       <div className={styles.controls}>
+        <button
+          type="button"
+          className={`${styles.btnControl} ${styles.btnNext}`}
+          onClick={() => {
+            advanceQuestion(liveTranscript || 'Answer confirmed');
+          }}
+          disabled={status === 'Speaking'}
+          title="Proceed to the next question"
+        >
+          <span>Next Question ➔</span>
+        </button>
+
         <button
           type="button"
           className={`${styles.btnControl} ${muted ? styles.btnMuteActive : ''}`}

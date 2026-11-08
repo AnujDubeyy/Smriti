@@ -296,6 +296,49 @@ test('state-machine: advance item records verbatim response and advances index',
   assert.equal(result.session.state, 'QUESTION_PREPARING');
 });
 
+test('state-machine: handles ordinal item_N identifiers flexibly without stall', () => {
+  const session = createAssessmentSession({
+    id: 'test-session-flex',
+    assignmentId: 'assign-flex',
+    patientId: 'patient-flex',
+    instrumentCode: 'six_cit_v1',
+    locale: 'en-IN'
+  });
+
+  const mockTimestamps = {
+    question_prepared_at: 1000,
+    question_playback_started_at: 1200,
+    question_playback_finished_at: 4000,
+    listening_started_at: 4050,
+    patient_speech_started_at: 5200,
+    patient_speech_ended_at: 6500,
+    stt_final_at: 7000,
+    answer_finalized_at: 7100
+  };
+
+  // Client sending item_1 instead of canonical 6cit_item_1
+  const result1 = recordItemAnswerAndAdvance(session, {
+    itemId: 'item_1',
+    verbatimTranscript: '2026',
+    timestamps: mockTimestamps
+  });
+
+  assert.equal(result1.session.currentItemIndex, 1);
+  assert.equal(result1.session.responses['6cit_item_1'].verbatimTranscript, '2026');
+  assert.equal(result1.isComplete, false);
+
+  // Client advancing to question 2 with item_2
+  const result2 = recordItemAnswerAndAdvance(session, {
+    itemId: 'item_2',
+    verbatimTranscript: 'November',
+    timestamps: mockTimestamps
+  });
+
+  assert.equal(result2.session.currentItemIndex, 2);
+  assert.equal(result2.session.responses['6cit_item_2'].verbatimTranscript, 'November');
+  assert.equal(result2.isComplete, false);
+});
+
 // -------------------------------------------------------------
 // 6. Instrument Version & Accessibility Specification Tests
 // -------------------------------------------------------------

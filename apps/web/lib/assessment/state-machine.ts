@@ -113,13 +113,32 @@ export function recordItemAnswerAndAdvance(
   const instrument = findInstrument(session.instrumentCode);
   if (!instrument) throw new Error('instrument_not_found');
 
-  const currentItem = instrument.items[session.currentItemIndex];
-  if (!currentItem || currentItem.id !== payload.itemId) {
-    throw new Error(`invalid_item_transition: expected ${currentItem?.id}, received ${payload.itemId}`);
+  let resolvedIndex = session.currentItemIndex;
+  // If payload.itemId matches an item in the instrument, use that item's index
+  const directIdx = instrument.items.findIndex(it => it.id === payload.itemId);
+  if (directIdx !== -1) {
+    resolvedIndex = directIdx;
+  } else {
+    // If payload.itemId is like "item_1", try 1-based index
+    const match = payload.itemId.match(/^item_(\d+)$/);
+    if (match) {
+      const idx = parseInt(match[1], 10) - 1;
+      if (idx >= 0 && idx < instrument.items.length) {
+        resolvedIndex = idx;
+      }
+    }
   }
 
+  const currentItem = instrument.items[resolvedIndex];
+  if (!currentItem) {
+    throw new Error(`invalid_item_transition: item not found for ${payload.itemId}`);
+  }
+
+  session.currentItemIndex = resolvedIndex;
+  const canonicalItemId = currentItem.id;
+
   // Idempotency: don't overwrite if already recorded with same text
-  const existing = session.responses[payload.itemId];
+  const existing = session.responses[canonicalItemId];
   const repetitionCount = existing ? existing.repetitionCount + 1 : 0;
 
   // Run accurate latency analysis
@@ -128,8 +147,8 @@ export function recordItemAnswerAndAdvance(
   });
 
   // Record response
-  session.responses[payload.itemId] = {
-    itemId: payload.itemId,
+  session.responses[canonicalItemId] = {
+    itemId: canonicalItemId,
     verbatimTranscript: payload.verbatimTranscript,
     timestamps: payload.timestamps,
     timingAnalysis,
@@ -138,7 +157,7 @@ export function recordItemAnswerAndAdvance(
   };
 
   // Check if there are further questions
-  const nextIndex = session.currentItemIndex + 1;
+  const nextIndex = resolvedIndex + 1;
   const isComplete = nextIndex >= instrument.items.length;
 
   if (isComplete) {

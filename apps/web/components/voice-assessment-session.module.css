@@ -215,6 +215,15 @@
   border: 1px solid rgba(255, 255, 255, 0.1);
 }
 
+.advanceHint {
+  margin: 0.4rem 0 0;
+  font-size: 0.8125rem;
+  color: #cbd5e1;
+  text-align: center;
+  max-width: 520px;
+  line-height: 1.4;
+}
+
 .controls {
   display: flex;
   align-items: center;
@@ -244,6 +253,27 @@
 .btnControl:hover:not(:disabled) {
   background: #f9f8f6;
   border-color: #beb9b0;
+}
+
+.btnNext {
+  background: var(--assessment, #d82832);
+  color: #ffffff;
+  border-color: #b91c1c;
+  font-weight: 800;
+  box-shadow: 0 4px 12px rgba(216, 40, 50, 0.25);
+}
+
+.btnNext:hover:not(:disabled) {
+  background: #b91c1c;
+  color: #ffffff;
+  border-color: #991b1b;
+  transform: translateY(-1px);
+}
+
+.btnNext:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+  transform: none;
 }
 
 .btnMuteActive {
