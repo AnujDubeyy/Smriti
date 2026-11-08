@@ -366,4 +366,39 @@ test('instruments: defines version specifications and accessibility requirements
     assert.equal(trial.electronicAdministrationApproved, true);
   }
 });
+// 7. Native Marathi & Regional Voice Mapping Tests
+// -------------------------------------------------------------
+test('voice: getLocaleVoice returns native Marathi voice and regional defaults', async () => {
+  const { getLocaleVoice } = await import('../lib/voice/locale-voices.ts');
+  const marathiVoice = getLocaleVoice('mr-IN');
+  assert.ok(marathiVoice);
+  assert.equal(marathiVoice, process.env.GNANI_MARATHI_VOICE_ID || 'Shivani');
+
+  const hindiVoice = getLocaleVoice('hi-IN');
+  assert.ok(hindiVoice);
+  assert.equal(hindiVoice, process.env.GNANI_HINDI_VOICE_ID || 'Shivani');
+
+  const englishVoice = getLocaleVoice('en-IN');
+  assert.ok(englishVoice);
+  assert.equal(englishVoice, process.env.GNANI_ENGLISH_VOICE_ID || 'Shivani');
+});
+
+// -------------------------------------------------------------
+// 8. Marathi Prompt Definition Coverage for All Instruments
+// -------------------------------------------------------------
+test('voice: all standardized and trial instruments have valid Marathi prompts', async () => {
+  const { getItemPrompt } = await import('../lib/assessment/prompts.ts');
+  const instruments = ['six_cit_v1', 'smriti_word_repeat_v1', 'smriti_category_fluency_v1', 'smriti_orientation_v1'];
+
+  for (const code of instruments) {
+    const inst = findInstrument(code);
+    assert.ok(inst, `Instrument ${code} must exist`);
+    for (const item of inst.items) {
+      const prompt = getItemPrompt(code, item.id, 'mr-IN');
+      assert.ok(prompt.instruction, `Missing Marathi instruction for ${code} / ${item.id}`);
+      assert.ok(prompt.instruction.length > 5, `Marathi instruction too short for ${code} / ${item.id}`);
+    }
+  }
+});
+
 

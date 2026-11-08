@@ -40,9 +40,15 @@ function openDatabase(): Promise<IDBDatabase> {
 export async function saveAssessmentRecording(recording: AssessmentRecording) {
   const database = await openDatabase();
   try {
+    const sanitized: AssessmentRecording = {
+      ...recording,
+      ownerId: recording.ownerId || 'default-patient',
+      id: recording.id || crypto.randomUUID(),
+      recordedAt: recording.recordedAt || new Date().toISOString()
+    };
     await new Promise<void>((resolve, reject) => {
       const transaction = database.transaction(STORE, 'readwrite');
-      transaction.objectStore(STORE).put(recording);
+      transaction.objectStore(STORE).put(sanitized);
       transaction.oncomplete = () => resolve();
       transaction.onerror = () => reject(transaction.error ?? new Error('recording_save_failed'));
       transaction.onabort = () => reject(transaction.error ?? new Error('recording_save_failed'));
@@ -50,12 +56,33 @@ export async function saveAssessmentRecording(recording: AssessmentRecording) {
   } finally { database.close(); }
 }
 
-export async function listAssessmentRecordings(ownerId: string): Promise<AssessmentRecording[]> {
+export async function listAssessmentRecordings(ownerId?: string): Promise<AssessmentRecording[]> {
   const database = await openDatabase();
   try {
     return await new Promise((resolve, reject) => {
-      const request = database.transaction(STORE, 'readonly').objectStore(STORE).index('ownerId').getAll(ownerId);
-      request.onsuccess = () => resolve((request.result as AssessmentRecording[]).sort((a, b) => b.recordedAt.localeCompare(a.recordedAt)));
+      const store = database.transaction(STORE, 'readonly').objectStore(STORE);
+      if (!ownerId) {
+        const req = store.getAll();
+        req.onsuccess = () => resolve((req.result as AssessmentRecording[]).sort((a, b) => b.recordedAt.localeCompare(a.recordedAt)));
+        req.onerror = () => reject(req.error ?? new Error('recording_load_failed'));
+        return;
+      }
+      const request = store.index('ownerId').getAll(ownerId);
+      request.onsuccess = () => {
+        const results = request.result as AssessmentRecording[];
+        if (results.length > 0) {
+          resolve(results.sort((a, b) => b.recordedAt.localeCompare(a.recordedAt)));
+          return;
+        }
+        // Fallback: search all recordings on this browser if ownerId mismatch or demo switch
+        const allReq = store.getAll();
+        allReq.onsuccess = () => {
+          const all = allReq.result as AssessmentRecording[];
+          const matched = all.filter(r => r.ownerId === ownerId || !r.ownerId || r.ownerId === 'demo-patient');
+          resolve((matched.length > 0 ? matched : all).sort((a, b) => b.recordedAt.localeCompare(a.recordedAt)));
+        };
+        allReq.onerror = () => resolve(results);
+      };
       request.onerror = () => reject(request.error ?? new Error('recording_load_failed'));
     });
   } finally { database.close(); }
