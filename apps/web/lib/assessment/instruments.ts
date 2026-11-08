@@ -17,6 +17,13 @@ export interface InstrumentItemSpec {
   maxPoints?: number;
 }
 
+export interface InstrumentVersionSpec {
+  version: string;
+  label: string;
+  electronicAdministrationApproved: boolean;
+  status: LicensingStatus;
+}
+
 export interface InstrumentDefinition {
   code: string;
   title: string;
@@ -27,6 +34,9 @@ export interface InstrumentDefinition {
   estimatedDuration: string;
   languages: ActivityLocale[];
   version: string;
+  availableVersions: InstrumentVersionSpec[];
+  accessibilityRequirements: string[];
+  electronicAdministrationApproved: boolean;
   maxScore?: number;
   licensing: {
     status: LicensingStatus;
@@ -48,6 +58,15 @@ export const TRIAL_ACTIVITIES: InstrumentDefinition[] = [
     estimatedDuration: '2–3 min',
     languages: ['en-IN', 'hi-IN', 'mr-IN'],
     version: '1.0',
+    availableVersions: [
+      { version: '1.0', label: 'Smriti Word Repetition Trial v1.0', electronicAdministrationApproved: true, status: 'original_demonstration' }
+    ],
+    accessibilityRequirements: [
+      'Auditory & verbal interaction only — no screen touch or typing required.',
+      'Quiet room with minimal background noise.',
+      'Caregiver may observe and encourage, but must not repeat or assist target words.'
+    ],
+    electronicAdministrationApproved: true,
     maxScore: 5,
     licensing: {
       status: 'original_demonstration',
@@ -76,6 +95,15 @@ export const TRIAL_ACTIVITIES: InstrumentDefinition[] = [
     estimatedDuration: '1 min',
     languages: ['en-IN', 'hi-IN', 'mr-IN'],
     version: '1.0',
+    availableVersions: [
+      { version: '1.0', label: 'Smriti Animal Fluency Trial v1.0 (60s)', electronicAdministrationApproved: true, status: 'original_demonstration' }
+    ],
+    accessibilityRequirements: [
+      'Continuous verbal speech into microphone for 60 seconds.',
+      'No screen interaction needed during timed naming.',
+      'Hearing check recommended so patient hears the start and stop cues clearly.'
+    ],
+    electronicAdministrationApproved: true,
     licensing: {
       status: 'original_demonstration',
       publisherNotice: 'Original Smriti timed practice task.',
@@ -103,6 +131,14 @@ export const TRIAL_ACTIVITIES: InstrumentDefinition[] = [
     estimatedDuration: '2 min',
     languages: ['en-IN', 'hi-IN', 'mr-IN'],
     version: '1.0',
+    availableVersions: [
+      { version: '1.0', label: 'Smriti Day & Place Conversation Trial v1.0', electronicAdministrationApproved: true, status: 'original_demonstration' }
+    ],
+    accessibilityRequirements: [
+      'Conversational voice dialogue.',
+      'Patient speaks naturally without looking at calendars or clocks.'
+    ],
+    electronicAdministrationApproved: true,
     maxScore: 2,
     licensing: {
       status: 'original_demonstration',
@@ -134,6 +170,16 @@ export const STANDARDIZED_INSTRUMENTS: InstrumentDefinition[] = [
     estimatedDuration: '3–5 min',
     languages: ['en-IN', 'hi-IN', 'mr-IN'],
     version: '1.0',
+    availableVersions: [
+      { version: '1.0', label: 'Kingshill 6CIT v1.0 (Standard 6-Item Error Scale)', electronicAdministrationApproved: false, status: 'original_demonstration' }
+    ],
+    accessibilityRequirements: [
+      '100% hands-free voice administration — no typing or visual component.',
+      'Requires private, quiet environment without clock or calendar in view.',
+      'No caregiver assistance allowed during memory stimulus or recall items.',
+      'Patient must be able to hear instructions clearly at moderate volume.'
+    ],
+    electronicAdministrationApproved: false,
     maxScore: 28,
     licensing: {
       status: 'original_demonstration',
@@ -161,6 +207,17 @@ export const STANDARDIZED_INSTRUMENTS: InstrumentDefinition[] = [
     estimatedDuration: '10–15 min',
     languages: ['en-IN', 'hi-IN', 'mr-IN'],
     version: '1.0',
+    availableVersions: [
+      { version: '1.0', label: 'TICS Standard Telephone Interview v1.0 (11 Items)', electronicAdministrationApproved: false, status: 'authorization_pending' },
+      { version: 'tics_m_v1', label: 'Modified TICS (TICS-M 39-Point Adaptation)', electronicAdministrationApproved: false, status: 'authorization_pending' }
+    ],
+    accessibilityRequirements: [
+      'Pure auditory/verbal telephone-style interaction — zero visual stimulus required.',
+      'Patient must be alert and seated comfortably in a quiet room.',
+      'Paper, writing instruments, and reference materials must NOT be accessible during testing.',
+      'Hearing aids should be in place and adjusted to clear volume.'
+    ],
+    electronicAdministrationApproved: false,
     licensing: {
       status: 'authorization_pending',
       publisherNotice: 'TICS proprietary instrument. Proprietary text, weights and normative interpretations withheld pending license.',
@@ -191,6 +248,16 @@ export const STANDARDIZED_INSTRUMENTS: InstrumentDefinition[] = [
     estimatedDuration: '10–12 min',
     languages: ['en-IN', 'hi-IN', 'mr-IN'],
     version: '1.0',
+    availableVersions: [
+      { version: '1.0', label: 'MoCA Blind 7.1 / 8.1 Audio-Verbal Protocol v1.0 (22 Points)', electronicAdministrationApproved: false, status: 'authorization_pending' }
+    ],
+    accessibilityRequirements: [
+      'Specifically adapted for visually impaired or remote telephone patients — no visual items.',
+      'Patient must be in a distraction-free environment for 12 consecutive minutes.',
+      'Caregiver or proctor may be present for technical setup, but must remain silent during scoring.',
+      'Clear, unhindered microphone reception required for serial subtractions and letter detection.'
+    ],
+    electronicAdministrationApproved: false,
     maxScore: 22,
     licensing: {
       status: 'authorization_pending',

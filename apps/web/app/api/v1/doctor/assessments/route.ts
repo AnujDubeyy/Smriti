@@ -6,6 +6,8 @@ export const dynamic='force-dynamic';
 const uuid=z.uuid();
 const create=z.object({
  patient_id:uuid,instrument_code:z.string(),
+ instrument_version:z.string().optional(),
+ locale:z.enum(['en-IN','hi-IN','mr-IN']).optional(),
  due_date:z.iso.date().nullable().optional()
 }).strict();
 export async function GET(request:Request){
@@ -29,6 +31,8 @@ export async function POST(request:Request){
   const {data,error}=await client.rpc('smriti_doctor_assessments',{
    operation:'assign',input:{
     patient_id:input.patient_id,instrument_code:input.instrument_code,
+    ...(input.instrument_version?{instrument_version:input.instrument_version}:{}),
+    ...(input.locale?{locale:input.locale}:{}),
     ...(input.due_date?{due_date:input.due_date}:{})
    }
   });

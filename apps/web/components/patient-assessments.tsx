@@ -280,9 +280,19 @@ export function PatientAssessments({patientId,name,locale,initial,localPreview=f
       <Mascot pillar="assessment"/>
       <div>
        <strong>{itemTitle}</strong>
-       <span className={`${styles.badge} ${isClinical?styles.badgeClinical:styles.badgeTrial}`}>
-        {isClinical?'Clinical Voice Assessment':'Trial Practice'}
-       </span>
+       <div style={{display:'flex',gap:'6px',alignItems:'center',flexWrap:'wrap',marginTop:'4px',marginBottom:'4px'}}>
+        <span className={`${styles.badge} ${isClinical?styles.badgeClinical:styles.badgeTrial}`}>
+         {isClinical?'Clinical Voice Assessment':'Trial Practice'}
+        </span>
+        <span style={{fontSize:'11px',fontWeight:700,padding:'2px 8px',borderRadius:'8px',background:'#faf4e2',color:'#78580c'}}>
+         🗣️ {a.locale==='hi-IN'?'हिन्दी · hi-IN':a.locale==='mr-IN'?'मराठी · mr-IN':'English · en-IN'}
+        </span>
+        {inst?.estimatedDuration && (
+         <span style={{fontSize:'11px',color:'#666'}}>
+          ⏱️ {inst.estimatedDuration}
+         </span>
+        )}
+       </div>
        <p>{itemDesc}</p>
        {a.due_date?<small>Due {displayDate(a.due_date)}</small>:null}
       </div>
@@ -329,7 +339,7 @@ export function PatientAssessments({patientId,name,locale,initial,localPreview=f
    <AssessmentPreflightModal
     instrumentTitle={findInstrument(preflightAssignment.instrument_code)?.title||'Assessment'}
     category={isStandardizedInstrument(preflightAssignment.instrument_code)?'standardized':'trial'}
-    initialLocale={language}
+    initialLocale={preflightAssignment.locale || language || 'en-IN'}
     onConfirm={(selLocale,proctor)=>void handleLaunchVoice(preflightAssignment,selLocale,proctor)}
     onCancel={()=>setPreflightAssignment(null)}
    />

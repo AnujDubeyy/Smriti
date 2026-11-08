@@ -25,6 +25,12 @@ import {
   recordItemAnswerAndAdvance
 } from '../lib/assessment/state-machine.ts';
 
+import {
+  findInstrument,
+  STANDARDIZED_INSTRUMENTS,
+  TRIAL_ACTIVITIES
+} from '../lib/assessment/instruments.ts';
+
 // -------------------------------------------------------------
 // 1. Response Latency & Audio Boundary Timing Tests
 // -------------------------------------------------------------
@@ -289,3 +295,32 @@ test('state-machine: advance item records verbatim response and advances index',
   // State machine should move to QUESTION_PREPARING for next item
   assert.equal(result.session.state, 'QUESTION_PREPARING');
 });
+
+// -------------------------------------------------------------
+// 6. Instrument Version & Accessibility Specification Tests
+// -------------------------------------------------------------
+test('instruments: defines version specifications and accessibility requirements', () => {
+  const sixCit = findInstrument('six_cit_v1');
+  assert.ok(sixCit);
+  assert.ok(sixCit.availableVersions.length >= 1);
+  assert.ok(sixCit.accessibilityRequirements.length >= 3);
+  assert.equal(sixCit.electronicAdministrationApproved, false);
+
+  const tics = findInstrument('tics_v1');
+  assert.ok(tics);
+  assert.ok(tics.availableVersions.length >= 2); // standard + tics_m
+  assert.equal(tics.licensing.status, 'authorization_pending');
+  assert.equal(tics.electronicAdministrationApproved, false);
+
+  const moca = findInstrument('moca_blind_v1');
+  assert.ok(moca);
+  assert.equal(moca.licensing.status, 'authorization_pending');
+  assert.equal(moca.electronicAdministrationApproved, false);
+
+  for (const trial of TRIAL_ACTIVITIES) {
+    assert.ok(trial.availableVersions.length >= 1);
+    assert.ok(trial.accessibilityRequirements.length >= 2);
+    assert.equal(trial.electronicAdministrationApproved, true);
+  }
+});
+

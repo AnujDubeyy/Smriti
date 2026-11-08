@@ -17,7 +17,7 @@ export function isAssessmentCode(value:string):value is AssessmentCode{
  return isActivityCode(value)||value==='six_cit_v1'||value==='tics_v1'||value==='moca_blind_v1';
 }
 export type Assignment={
- id:string;instrument_code:string;status:string;due_date:string|null;
+ id:string;instrument_code:string;instrument_version?:string;locale?:ActivityLocale;status:string;due_date:string|null;
  created_at:string;submitted_at?:string|null;response_text?:string;caregiver_observation?:string;task_score?:number|null
 };
 export type ActivityLocale='en-IN'|'hi-IN'|'mr-IN';

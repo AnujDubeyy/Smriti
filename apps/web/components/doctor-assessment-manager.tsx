@@ -8,6 +8,8 @@ import {STANDARDIZED_INSTRUMENTS,TRIAL_ACTIVITIES,findInstrument,isStandardizedI
 import {AssessmentResult} from './assessment-result';
 import {DoctorRecordingImport} from './doctor-recording-import';
 import {DoctorAssessmentReportModal} from './doctor-assessment-report-modal';
+import {DoctorAssignModal} from './doctor-assign-modal';
+import type {ActivityLocale} from '../lib/assessment/instruments';
 import styles from './doctor-assessments.module.css';
 
 type Patient={patient_id:string;patient_name:string;caretaker_name:string;status:string;sharing_enabled:boolean};
@@ -23,6 +25,7 @@ export function DoctorAssessmentManager({patients,initialPatient,localPreview=fa
  const [message,setMessage]=useState('');
  const [error,setError]=useState('');
  const [selectedReportAssignment,setSelectedReportAssignment]=useState<string|null>(null);
+ const [assigningInstrument,setAssigningInstrument]=useState<string|null>(null);
 
  const current=patients.find(p=>p.patient_id===selected);
 
@@ -52,22 +55,37 @@ export function DoctorAssessmentManager({patients,initialPatient,localPreview=fa
   return()=>{controller.abort();clearInterval(interval);window.removeEventListener('focus',onFocus);};
  },[selected,current?.sharing_enabled,current?.status,localPreview]);
 
- async function assign(code:AssessmentCode){
+ async function handleAssign(code:AssessmentCode,version:string,locale:ActivityLocale,targetDueDate:string){
   if(!selected||busy||!current?.sharing_enabled)return;
   if(localPreview){
-   updateDemoCare(state=>({...state,assignments:[...state.assignments,{id:demoId(),instrument_code:code,status:'assigned',due_date:dueDate||null,created_at:new Date().toISOString()}]}));
-   setMessage('Assigned to Ramesh. Open Patient view to see the notification and complete the voice assessment.');return;
+   updateDemoCare(state=>({...state,assignments:[...state.assignments,{
+    id:demoId(),
+    instrument_code:code,
+    instrument_version:version,
+    locale,
+    status:'assigned',
+    due_date:targetDueDate||null,
+    created_at:new Date().toISOString()
+   }]}));
+   setMessage(`Assigned ${code} (${version}) in ${locale} to ${current.patient_name}. Open Patient view to begin voice assessment.`);
+   return;
   }
   setBusy(true);setError('');setMessage('');
   try{
    const response=await fetch('/api/v1/doctor/assessments',{
     method:'POST',headers:{'Content-Type':'application/json'},
-    body:JSON.stringify({patient_id:selected,instrument_code:code,due_date:dueDate||null})
+    body:JSON.stringify({
+     patient_id:selected,
+     instrument_code:code,
+     instrument_version:version,
+     locale,
+     due_date:targetDueDate||null
+    })
    });
    const body=await response.json().catch(()=>({error:'temporarily_unavailable'}));
    if(!response.ok)throw new Error(body.error||'temporarily_unavailable');
    setAssignments(await load(selected));
-   setMessage('Assigned successfully. The assessment now appears in the patient/caretaker’s Assessment tab.');
+   setMessage(`Assigned successfully. Smriti will administer the test in ${locale} with audio latency tracking.`);
   }catch(e){
    const reason=e instanceof Error?e.message:'temporarily_unavailable';
    const messages:Record<string,string>={
@@ -103,9 +121,22 @@ export function DoctorAssessmentManager({patients,initialPatient,localPreview=fa
      ?'Caretaker connected. Doctor sharing is not enabled yet.'
      :'Caretaker connected · Doctor sharing enabled'}</p>:null}
     {current&&!current.sharing_enabled?<p className={styles.warning}>Ask the caretaker to open Profile → Care permissions → “Share monitoring with connected doctor.” Smriti requires their consent before clinical assignments or records are shared.</p>:null}
-    <label className={styles.label}>Due date <span className={styles.optional}>(optional)</span>
-     <DayFirstDate value={dueDate} min={new Date().toISOString().slice(0,10)} onChange={setDueDate}/>
-    </label>
+    <div style={{display:'flex',justifyContent:'space-between',alignItems:'flex-end',gap:'1rem',flexWrap:'wrap',marginTop:'12px'}}>
+     <label className={styles.label} style={{margin:0,flex:1,minWidth:'220px'}}>Due date <span className={styles.optional}>(optional)</span>
+      <DayFirstDate value={dueDate} min={new Date().toISOString().slice(0,10)} onChange={setDueDate}/>
+     </label>
+     {current?.sharing_enabled&&current.status==='joined'&&(
+      <button
+       type="button"
+       className={styles.clinicalButton}
+       style={{width:'auto',minWidth:'200px',padding:'0 1.5rem'}}
+       onClick={()=>setAssigningInstrument('six_cit_v1')}
+       disabled={busy||loading}
+      >
+       + Assign assessment
+      </button>
+     )}
+    </div>
    </div>
 
    {current?.sharing_enabled&&current.status==='joined'?<>
@@ -140,7 +171,7 @@ export function DoctorAssessmentManager({patients,initialPatient,localPreview=fa
         Languages: English (en-IN), हिन्दी (hi-IN), मराठी (mr-IN)
        </small>
        <button type="button" className={styles.clinicalButton} disabled={busy||loading||awaiting||dueDate==='invalid'}
-        onClick={()=>void assign(activity.code as AssessmentCode)}>{awaiting?'Already assigned':busy?'Assigning…':'Assign voice assessment'}</button>
+        onClick={()=>setAssigningInstrument(activity.code)}>{awaiting?'Already assigned':busy?'Assigning…':'Configure & Assign voice assessment'}</button>
       </article>;
      })}
     </div>
@@ -167,7 +198,7 @@ export function DoctorAssessmentManager({patients,initialPatient,localPreview=fa
         <strong>Purpose:</strong> {activity.clinicalPurpose}
        </small>
        <button type="button" disabled={busy||loading||awaiting||dueDate==='invalid'}
-        onClick={()=>void assign(activity.code as AssessmentCode)}>{awaiting?'Already assigned':busy?'Assigning…':'Assign trial exercise'}</button>
+        onClick={()=>setAssigningInstrument(activity.code)}>{awaiting?'Already assigned':busy?'Assigning…':'Configure & Assign trial exercise'}</button>
       </article>;
      })}
     </div>
@@ -180,13 +211,22 @@ export function DoctorAssessmentManager({patients,initialPatient,localPreview=fa
        const inst=findInstrument(a.instrument_code);
        const title=inst?.title||'Activity';
        const isClinical=isStandardizedInstrument(a.instrument_code);
+       const langLabel=a.locale==='hi-IN'?'हिन्दी · hi-IN':a.locale==='mr-IN'?'मराठी · mr-IN':'en-IN';
        return <li key={a.id}>
         <div style={{display:'flex',flexDirection:'column',gap:'4px',flex:1,minWidth:'220px'}}>
-         <div style={{display:'flex',alignItems:'center',gap:'8px'}}>
+         <div style={{display:'flex',alignItems:'center',gap:'8px',flexWrap:'wrap'}}>
           <strong>{title}</strong>
           <span className={`${styles.badge} ${isClinical?styles.badgeClinical:styles.badgeTrial}`}>
            {isClinical?'Clinical Assessment':'Trial Exercise'}
           </span>
+          <span style={{fontSize:'11px',fontWeight:700,padding:'2px 7px',borderRadius:'8px',background:'#f0ede6',color:'#555'}}>
+           🗣️ {langLabel}
+          </span>
+          {a.instrument_version && (
+           <span style={{fontSize:'11px',color:'#777'}}>
+            v{a.instrument_version}
+           </span>
+          )}
          </div>
          {a.due_date?<small>Due {displayDate(a.due_date)}</small>:null}
         </div>
@@ -210,6 +250,18 @@ export function DoctorAssessmentManager({patients,initialPatient,localPreview=fa
    {error?<p className={styles.error} role="alert">{error}</p>:null}
   </>}
   <Link href="/doctor" className={styles.back}>Back to doctor workspace</Link>
+
+  {assigningInstrument && (
+   <DoctorAssignModal
+    patientName={current?.patient_name || 'Patient'}
+    initialInstrumentCode={assigningInstrument}
+    initialDueDate={dueDate}
+    onAssign={handleAssign}
+    onClose={()=>setAssigningInstrument(null)}
+    isAlreadyAssigned={(code)=>assignments.some(a=>a.instrument_code===code&&(a.status==='assigned'||a.status==='in_progress'))}
+    busy={busy}
+   />
+  )}
 
   {selectedReportAssignment && (
    <DoctorAssessmentReportModal

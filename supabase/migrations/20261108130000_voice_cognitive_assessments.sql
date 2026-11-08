@@ -29,10 +29,15 @@ BEGIN
   RAISE EXCEPTION 'sharing_required' USING errcode='42501';END IF;
  IF operation='list' THEN
   RETURN COALESCE((SELECT jsonb_agg(jsonb_build_object(
-   'id',a.id,'instrument_code',a.instrument_code,'status',a.status,
-   'due_date',a.due_date,'created_at',a.created_at,
+   'response_text',r.responses->>'response_text',
+   'caregiver_observation',r.responses->>'caregiver_observation',
+   'task_score',r.score_result->'task_score',
+   'id',a.id,'instrument_code',a.instrument_code,'instrument_version',a.instrument_version,
+   'locale',substring(coalesce(a.notes,'') from 'locale:([a-z]{2}-[A-Z]{2})'),
+   'status',a.status,'due_date',a.due_date,'created_at',a.created_at,
    'submitted_at',(SELECT max(s.created_at) FROM public.assessment_submissions s WHERE s.assignment_id=a.id)
   ) ORDER BY a.created_at DESC) FROM public.assessment_assignments a
+   LEFT JOIN LATERAL (SELECT responses,score_result FROM public.assessment_submissions sub WHERE sub.assignment_id=a.id AND sub.patient_id=p ORDER BY created_at DESC LIMIT 1) r ON true
    WHERE a.patient_id=p AND a.instrument_code IN (
     'smriti_word_repeat_v1','smriti_category_fluency_v1','smriti_orientation_v1',
     'six_cit_v1','tics_v1','moca_blind_v1'
@@ -57,7 +62,16 @@ BEGIN
    RAISE EXCEPTION 'assessment_already_assigned' USING errcode='23505';END IF;
   INSERT INTO public.assessment_assignments
    (patient_id,instrument_code,instrument_version,assigned_by,intended_respondent,due_date,notes,status)
-  VALUES (p,task,'1.0',u,'patient',due,'Voice-based assessment demonstration activity.', 'assigned')
+  VALUES (
+   p,
+   task,
+   COALESCE(NULLIF(input->>'instrument_version',''), '1.0'),
+   u,
+   'patient',
+   due,
+   'Voice-based assessment demonstration activity. locale:' || COALESCE(NULLIF(input->>'locale',''), 'en-IN'),
+   'assigned'
+  )
   RETURNING id INTO assigned;
   RETURN jsonb_build_object('id',assigned,'status','assigned');
  ELSE RAISE EXCEPTION 'invalid_operation' USING errcode='22023';
@@ -74,6 +88,8 @@ DECLARE
  assignment_id_found uuid;
  answers jsonb;
  done_id uuid;
+ activity text;
+ points integer;
 BEGIN
  p:=(input->>'patient_id')::uuid;
  IF u IS NULL OR p IS NULL OR NOT EXISTS (
@@ -88,10 +104,15 @@ BEGIN
   RAISE EXCEPTION 'forbidden' USING errcode='42501';END IF;
  IF operation='list' THEN
   RETURN COALESCE((SELECT jsonb_agg(jsonb_build_object(
-   'id',a.id,'instrument_code',a.instrument_code,'status',a.status,
-   'due_date',a.due_date,'created_at',a.created_at)
+   'response_text',r.responses->>'response_text',
+   'caregiver_observation',r.responses->>'caregiver_observation',
+   'task_score',r.score_result->'task_score',
+   'id',a.id,'instrument_code',a.instrument_code,'instrument_version',a.instrument_version,
+   'locale',substring(coalesce(a.notes,'') from 'locale:([a-z]{2}-[A-Z]{2})'),
+   'status',a.status,'due_date',a.due_date,'created_at',a.created_at)
    ORDER BY a.created_at DESC)
    FROM public.assessment_assignments a
+   LEFT JOIN LATERAL (SELECT responses,score_result FROM public.assessment_submissions sub WHERE sub.assignment_id=a.id AND sub.patient_id=p ORDER BY created_at DESC LIMIT 1) r ON true
    WHERE a.patient_id=p AND a.intended_respondent IN ('patient','caregiver')
     AND a.instrument_code IN (
      'smriti_word_repeat_v1','smriti_category_fluency_v1','smriti_orientation_v1',
@@ -101,33 +122,36 @@ BEGIN
  ELSIF operation='submit' THEN
   aid:=(input->>'assignment_id')::uuid;
   answers:=input->'responses';
-  IF jsonb_typeof(answers)<>'object' OR length(trim(coalesce(answers->>'response_text',''))) NOT BETWEEN 1 AND 1500
+  IF answers IS NULL OR jsonb_typeof(answers)<>'object' OR length(trim(coalesce(answers->>'response_text',''))) NOT BETWEEN 1 AND 1500
     OR length(coalesce(answers->>'caregiver_observation',''))>1200
   THEN RAISE EXCEPTION 'invalid_assessment_response' USING errcode='22023';END IF;
-  SELECT id INTO assignment_id_found FROM public.assessment_assignments
-   WHERE id=aid AND patient_id=p AND intended_respondent IN ('patient','caregiver')
-     AND status IN ('assigned','in_progress')
+  SELECT id,instrument_code INTO assignment_id_found,activity FROM public.assessment_assignments
+   WHERE id=aid AND patient_id=p AND status='assigned'
+    AND intended_respondent IN ('patient','caregiver')
+    AND instrument_code IN (
+     'smriti_word_repeat_v1','smriti_category_fluency_v1','smriti_orientation_v1',
+     'six_cit_v1','tics_v1','moca_blind_v1'
+    )
    FOR UPDATE;
   IF assignment_id_found IS NULL THEN
-   IF EXISTS (SELECT 1 FROM public.assessment_assignments WHERE id=aid AND patient_id=p AND status='submitted') THEN
-    RAISE EXCEPTION 'assessment_already_completed' USING errcode='23505';
+   RAISE EXCEPTION 'assessment_already_completed' USING errcode='23505';END IF;
+  IF answers ? 'task_score' THEN
+   IF jsonb_typeof(answers->'task_score') <> 'number' OR (answers->>'task_score') !~ '^[0-9]{1,3}$' THEN
+    RAISE EXCEPTION 'invalid_assessment_response' USING errcode='22023';
    END IF;
-   RAISE EXCEPTION 'invalid_assignment' USING errcode='22023';
+   points:=(answers->>'task_score')::integer;
+   IF points>(CASE activity WHEN 'smriti_word_repeat_v1' THEN 5 WHEN 'smriti_orientation_v1' THEN 2 WHEN 'six_cit_v1' THEN 28 WHEN 'moca_blind_v1' THEN 22 ELSE 200 END) THEN
+    RAISE EXCEPTION 'invalid_assessment_response' USING errcode='22023';
+   END IF;
   END IF;
   INSERT INTO public.assessment_submissions
-   (assignment_id,submitted_by,responses,status)
-  VALUES (aid,u,jsonb_build_object(
-   'response_text',trim(answers->>'response_text'),
-   'caregiver_observation',trim(coalesce(answers->>'caregiver_observation','')),
-   'task_score',CASE WHEN answers ? 'task_score' AND (answers->>'task_score') ~ '^[0-9]+$' THEN (answers->>'task_score')::int ELSE NULL END
-  ),'submitted')
+   (assignment_id,patient_id,respondent_user_id,responses,score_result,status)
+  VALUES (aid,p,u,answers-'task_score',jsonb_build_object('task_score',points,'scored',points IS NOT NULL,'clinical_interpretation',false),'submitted')
   RETURNING id INTO done_id;
-  UPDATE public.assessment_assignments
-   SET status='submitted',completed_at=now()
+  UPDATE public.assessment_assignments SET status='submitted',updated_at=now()
    WHERE id=aid;
-  RETURN jsonb_build_object('id',done_id,'status','submitted');
- ELSE RAISE EXCEPTION 'invalid_operation' USING errcode='22023';
- END IF;
+  RETURN jsonb_build_object('submission_id',done_id,'status','submitted');
+ ELSE RAISE EXCEPTION 'invalid_operation' USING errcode='22023';END IF;
 END;
 $f$;
 
