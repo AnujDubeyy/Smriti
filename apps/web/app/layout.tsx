@@ -5,6 +5,6 @@ import './workspace.css';
 import { Preferences } from './preferences';
 import {CareInboxProvider} from '../components/notification-panel';
 import { AppShell } from '../components/app-shell';
-export const metadata: Metadata = { title: { default: 'Smriti', template: '%s · Smriti' }, description: 'Support, connection and care', applicationName: 'Smriti', appleWebApp: { capable: true, title: 'Smriti', statusBarStyle: 'default' }, icons: { icon: '/brand/icon-192.png', apple: '/brand/icon-192.png' } };
+export const metadata: Metadata = { title: { default: 'Smriti', template: '%s · Smriti' }, description: 'Support, connection and care', applicationName: 'Smriti', appleWebApp: { capable: true, title: 'Smriti', statusBarStyle: 'default' }, icons: { icon: '/favicon.ico', shortcut: '/favicon.ico', apple: '/brand/icon-192.png' } };
 export const viewport: Viewport = { width: 'device-width', initialScale: 1, viewportFit: 'cover', themeColor: '#FAF9F6' };
 export default function RootLayout({ children }: { children: React.ReactNode }) { return <html lang="en-IN" dir="ltr"><body><Preferences><CareInboxProvider localPreview={localDoctorPreview()}><AppShell localPreview={localDoctorPreview()}>{children}</AppShell></CareInboxProvider></Preferences></body></html>; }
