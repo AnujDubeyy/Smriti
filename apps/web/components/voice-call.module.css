@@ -13,7 +13,7 @@
 .liveDot,.connectionDot{width:8px;height:8px;flex:none;border-radius:50%;background:#ffcf3d;box-shadow:0 0 0 4px #ffcf3d24;animation:live-pulse 1.8s ease-out infinite}
 .hero{display:grid;grid-template-columns:minmax(40px,1fr) 150px minmax(40px,1fr);align-items:center;gap:8px;width:min(100%,470px);margin:5px auto 2px}
 .avatar{position:relative;display:grid;place-items:center;width:150px;height:150px;border-radius:50%;background:#ffdb73;box-shadow:0 0 0 9px #ffdb7324,0 12px 30px #101e2b55;animation:avatar-float 4s ease-in-out infinite}
-.avatar .smriti-art{position:relative;z-index:1;width:142px;height:142px;object-fit:contain;filter:drop-shadow(0 4px 2px #7e49151a)}
+.avatar img,.avatar .smriti-art{position:relative;z-index:1;width:142px;height:142px;object-fit:contain;filter:drop-shadow(0 4px 2px #7e49151a)}
 .avatarOrbit{position:absolute;inset:-10px;border:1px solid #ffe8a35c;border-radius:50%;animation:orbit-turn 18s linear infinite}
 .avatarOrbit:before,.avatarOrbit:after{content:"";position:absolute;width:7px;height:7px;border-radius:50%;background:#ffdc76}
 .avatarOrbit:before{top:14%;right:15%}.avatarOrbit:after{bottom:13%;left:15%;width:5px;height:5px;background:#d9e9ff}
@@ -68,7 +68,7 @@
  .language{width:100%;min-width:0;grid-template-columns:1fr}
  .stage{padding:22px 13px 18px;border-radius:21px;gap:6px}
  .hero{grid-template-columns:minmax(24px,1fr) 126px minmax(24px,1fr);gap:4px;margin:4px auto}
- .avatar{width:126px;height:126px}.avatar .smriti-art{width:120px;height:120px}
+ .avatar{width:126px;height:126px}.avatar img,.avatar .smriti-art{width:120px;height:120px}
  .waveform{gap:3px;height:40px}.waveform i{width:3px}.waveform i:nth-child(n+10){display:none}
  .stage h2{font-size:24px}.state{font-size:16px}
  .statusCard{padding:8px 11px;min-height:47px}.detail{font-size:12px}

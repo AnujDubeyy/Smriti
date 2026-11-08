@@ -314,7 +314,7 @@ export function VoiceStudio({patientId}:{patientId?:string;demo?:boolean}){
     </div>
     <div className={styles.avatar} data-stage={stage}>
      <span className={styles.avatarOrbit} aria-hidden="true"/>
-     <SmritiArt name="patient-avatar" size={142}/>
+     <img src="/brand/companionship.webp" alt="Smriti" width="142" height="142"/>
     </div>
     <div className={styles.waveform} data-active={stage==='listening'||stage==='hearing'||stage==='speaking'} aria-hidden="true">
      <i/><i/><i/><i/><i/><i/><i/><i/><i/><i/><i/><i/><i/>

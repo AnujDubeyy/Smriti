@@ -246,4 +246,6 @@
 .smriti-empty-art{display:flex;align-items:center;flex-direction:column;gap:.75rem;text-align:center;padding:1rem}
 .smriti-empty-art p{max-width:34ch}
 .state-panel>.smriti-art{margin-bottom:.6rem}
+.state-panel.state-panel-loading{min-height:min(70vh,520px);display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;margin:0 auto;padding-block:3rem}
+.state-panel.state-panel-loading p{margin-block:.75rem 0;font-weight:600;text-align:center}
 @media (prefers-reduced-motion:reduce){.care-home-tile .smriti-art{transition:none}.care-home-tile:hover .smriti-art{transform:none}}

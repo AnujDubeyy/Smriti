@@ -39,6 +39,7 @@
 .care-home-tile.talk b{color:#725500}
 .care-home-tile.observe b{color:#1556e8}
 .care-home-tile.assessments b{color:#b72c33}
+.care-home-tile.recordings b{color:#8f3036}
 .care-home-icon{display:grid;place-items:center;border-radius:50%;background:white;width:48px;height:48px;font-size:26px;color:#333}
 .care-home-links{display:flex;gap:18px;flex-wrap:wrap;padding-top:16px;font-size:14px}
 .care-home-links a{font-weight:750}
@@ -236,3 +237,15 @@
 @media(min-width:1024px){
  .smriti-desktop-navigation .smriti-doctor-nav-icon{width:34px;height:34px}
 }
+
+/* Smriti supporting illustrations: separate from canonical logo and Nani artwork. */
+.smriti-art{display:inline-block;flex:none;object-fit:contain;max-width:100%;height:auto}
+.care-home-tile .smriti-art{width:4rem;height:4rem;transition:transform .18s ease}
+.care-home-tile:hover .smriti-art{transform:translateY(-3px) rotate(-2deg)}
+.smriti-patient-identity{display:inline-flex;align-items:center;gap:.7rem;flex-wrap:wrap}
+.smriti-empty-art{display:flex;align-items:center;flex-direction:column;gap:.75rem;text-align:center;padding:1rem}
+.smriti-empty-art p{max-width:34ch}
+.state-panel>.smriti-art{margin-bottom:.6rem}
+.state-panel.state-panel-loading{min-height:min(70vh,520px);display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;margin:0 auto;padding-block:3rem}
+.state-panel.state-panel-loading p{margin-block:.75rem 0;font-weight:600;text-align:center}
+@media (prefers-reduced-motion:reduce){.care-home-tile .smriti-art{transition:none}.care-home-tile:hover .smriti-art{transform:none}}

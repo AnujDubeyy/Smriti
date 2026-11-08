@@ -41,14 +41,23 @@ function CareNav({mode,expanded=false,doctor=false}:{mode:'desktop'|'mobile';exp
   className={mode==='desktop'?'smriti-desktop-navigation':'smriti-mobile-navigation'}
   aria-label={mode==='desktop'?t.nav:t.nav+' — bottom tabs'}>
   {!doctor?<Link href="/" title="Home" aria-label="Home" aria-current={path==='/'?'page':undefined} className={'smriti-nav-item'+(path==='/'?' is-active':'')}><span className="home-nav-icon" aria-hidden="true">⌂</span><span className="smriti-nav-label">Home</span></Link>:null}
-  {doctor?doctorSections.map(section=><Link key={section.href} href={section.href}
-    title={section.label} aria-label={section.label}
-    aria-current={isDoctorSectionActive(path,section.href)?'page':undefined}
-    className={'smriti-nav-item smriti-doctor-item '+section.icon+
-     (isDoctorSectionActive(path,section.href)?' is-active':'')}>
-    <span aria-hidden="true" className="smriti-doctor-nav-icon"><svg viewBox="0 0 24 24" width="23" height="23" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d={section.icon==='patients'?'M16 21v-2a5 5 0 0 0-10 0v2 M15 7a4 4 0 1 1-8 0 4 4 0 1 1 8 0':section.icon==='assessments'?'M8 5H5v16h14V5h-3 M9 3h6v4H9z M8 14l3 3 5-6':section.icon==='monitoring'?'M3 19h18 M4 14l5-6 4 4 7-8':'M3 4h18v12H9l-6 5z'}/></svg></span>
-    <span className="smriti-nav-label" aria-hidden={mode==='desktop'&&!expanded}>{section.label}</span>
-   </Link>):pillars.map((pillar,index)=>{
+  {doctor?doctorSections.map(section=>{
+    const active=isDoctorSectionActive(path,section.href);
+    return <Link key={section.href} href={section.href}
+     title={section.label} aria-label={section.label}
+     aria-current={active?'page':undefined}
+     className={'smriti-nav-item smriti-doctor-item '+section.icon+
+      (active?' is-active':'')}>
+     {section.icon==='conversations'?(
+      <Mascot pillar="companionship"/>
+     ):section.icon==='monitoring'?(
+      <Mascot pillar="monitoring"/>
+     ):(
+      <span aria-hidden="true" className="smriti-doctor-nav-icon"><svg viewBox="0 0 24 24" width="23" height="23" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d={section.icon==='patients'?'M16 21v-2a5 5 0 0 0-10 0v2 M15 7a4 4 0 1 1-8 0 4 4 0 1 1 8 0':'M8 5H5v16h14V5h-3 M9 3h6v4H9z M8 14l3 3 5-6'}/></svg></span>
+     )}
+     <span className="smriti-nav-label" aria-hidden={mode==='desktop'&&!expanded}>{section.label}</span>
+    </Link>;
+   }):pillars.map((pillar,index)=>{
    const active=isPillarActive(path,pillar);
    return <Link
     key={pillar}
