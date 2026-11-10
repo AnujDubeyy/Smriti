@@ -372,7 +372,7 @@ test('voice: getLocaleVoice returns native Marathi voice, Bengali voice, and reg
   const { getLocaleVoice } = await import('../lib/voice/locale-voices.ts');
   const marathiVoice = getLocaleVoice('mr-IN');
   assert.ok(marathiVoice);
-  assert.equal(marathiVoice, process.env.GNANI_MARATHI_VOICE_ID || 'Brinda');
+  assert.equal(marathiVoice, process.env.GNANI_MARATHI_VOICE_ID || 'Vasudha');
 
   const bengaliVoice = getLocaleVoice('bn-IN');
   assert.ok(bengaliVoice);

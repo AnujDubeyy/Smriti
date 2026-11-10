@@ -1,14 +1,14 @@
 /**
- * Voice selection per locale for Gnani Timbre TTS (model: timbre-v2.5).
+ * Voice selection per locale for Gnani Timbre TTS.
  * Active voices:
- *   mr-IN → Brinda (GNANI_MARATHI_VOICE_ID)
- *   bn-IN → Trisha (GNANI_BENGALI_VOICE_ID)
- * Override any locale via its env var; fallback is 'Shivani' on timbre-v3.0.
+ *   mr-IN → Vasudha on timbre-v3.0 (GNANI_MARATHI_VOICE_ID)
+ *   bn-IN → Trisha on timbre-v2.5 (GNANI_BENGALI_VOICE_ID)
+ * Override any locale via its env var; fallback is 'Shivani'.
  */
 
 export function getLocaleVoice(locale: string): string {
   if (locale === 'mr-IN') {
-    return process.env.GNANI_MARATHI_VOICE_ID || 'Brinda';
+    return process.env.GNANI_MARATHI_VOICE_ID || 'Vasudha';
   }
   if (locale === 'bn-IN') {
     return process.env.GNANI_BENGALI_VOICE_ID || 'Trisha';
