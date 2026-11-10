@@ -8,10 +8,10 @@
 
 export function getLocaleVoice(locale: string): string {
   if (locale === 'mr-IN') {
-    return process.env.GNANI_MARATHI_VOICE_ID || process.env.GNANI_DEFAULT_VOICE_ID || 'Shivani';
+    return process.env.GNANI_MARATHI_VOICE_ID || 'Brinda';
   }
   if (locale === 'bn-IN') {
-    return process.env.GNANI_BENGALI_VOICE_ID || process.env.GNANI_DEFAULT_VOICE_ID || 'Trisha';
+    return process.env.GNANI_BENGALI_VOICE_ID || 'Trisha';
   }
   if (locale === 'hi-IN') {
     return process.env.GNANI_HINDI_VOICE_ID || process.env.GNANI_DEFAULT_VOICE_ID || 'Shivani';

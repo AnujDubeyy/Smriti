@@ -368,11 +368,15 @@ test('instruments: defines version specifications and accessibility requirements
 });
 // 7. Native Marathi & Regional Voice Mapping Tests
 // -------------------------------------------------------------
-test('voice: getLocaleVoice returns native Marathi voice and regional defaults', async () => {
+test('voice: getLocaleVoice returns native Marathi voice, Bengali voice, and regional defaults', async () => {
   const { getLocaleVoice } = await import('../lib/voice/locale-voices.ts');
   const marathiVoice = getLocaleVoice('mr-IN');
   assert.ok(marathiVoice);
-  assert.equal(marathiVoice, process.env.GNANI_MARATHI_VOICE_ID || 'Shivani');
+  assert.equal(marathiVoice, process.env.GNANI_MARATHI_VOICE_ID || 'Brinda');
+
+  const bengaliVoice = getLocaleVoice('bn-IN');
+  assert.ok(bengaliVoice);
+  assert.equal(bengaliVoice, process.env.GNANI_BENGALI_VOICE_ID || 'Trisha');
 
   const hindiVoice = getLocaleVoice('hi-IN');
   assert.ok(hindiVoice);

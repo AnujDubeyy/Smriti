@@ -25,21 +25,51 @@ export function AssessmentPreflightModal({
   const [consentChecked, setConsentChecked] = useState(true);
   const [proctorPresent, setProctorPresent] = useState(false);
 
-  const testSpeaker = () => {
+  const fallbackSpeaker = (text: string) => {
     if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
-      window.speechSynthesis.cancel();
-      const text = locale === 'hi-IN'
-        ? 'नमस्ते, यह आवाज़ की जाँच है।'
-        : locale === 'mr-IN'
-        ? 'नमस्कार, ही आवाजाची चाचणी आहे.'
-        : 'Hello, this is a speaker check for Smriti.';
+      try { window.speechSynthesis.cancel(); } catch {}
       const utter = new SpeechSynthesisUtterance(text);
       utter.lang = locale;
       utter.onend = () => setSpeakerTested(true);
+      utter.onerror = () => setSpeakerTested(true);
       window.speechSynthesis.speak(utter);
     } else {
       setSpeakerTested(true);
     }
+  };
+
+  const testSpeaker = async () => {
+    const text = locale === 'hi-IN'
+      ? 'नमस्ते, यह आवाज़ की जाँच है।'
+      : locale === 'mr-IN'
+      ? 'नमस्कार, ही आवाजाची चाचणी आहे.'
+      : locale === 'bn-IN'
+      ? 'নমস্কার, এটি স্মৃতির ভয়েস পরীক্ষা।'
+      : 'Hello, this is a speaker check for Smriti.';
+
+    if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
+      try { window.speechSynthesis.cancel(); } catch {}
+    }
+
+    try {
+      const res = await fetch('/api/v1/assessment/synthesize', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ text, locale })
+      });
+      if (res.ok) {
+        const data = await res.json().catch(() => ({}));
+        if (data.ok && data.audio_base64) {
+          const audio = new Audio(`data:audio/wav;base64,${data.audio_base64}`);
+          audio.onended = () => setSpeakerTested(true);
+          audio.onerror = () => fallbackSpeaker(text);
+          await audio.play();
+          return;
+        }
+      }
+    } catch {}
+
+    fallbackSpeaker(text);
   };
 
   const testMic = async () => {

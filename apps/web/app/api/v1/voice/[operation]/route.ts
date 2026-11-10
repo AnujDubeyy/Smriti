@@ -10,6 +10,7 @@ import {transcribeAssessment} from '../../../../../lib/voice/assessment-transcri
 import {asksToStop,itemSchema,supportSchema,type AIInput} from '../../../../../lib/voice/ai';
 import {MAX_AUDIO_BYTES,inspectWav} from '../../../../../lib/voice/audio';
 import {VOICE_LANGUAGE_CODES} from '../../../../../lib/voice/languages';
+import {getLocaleVoice} from '../../../../../lib/voice/locale-voices';
 export const maxDuration=90;
 const base=z.object({session_id:z.uuid()});
 const start=z.object({patient_id:z.uuid(),locale:z.enum(VOICE_LANGUAGE_CODES),synthetic:z.boolean().optional()}).strict();
@@ -44,7 +45,7 @@ export async function POST(request:Request,{params}:{params:Promise<{operation:s
    gemini={ok:true};
   }catch(e){gemini={ok:false,code:safeError(e,'ai_unavailable')};}
   try{
-   const bytes=await synthesize('Hello, I am Smriti.',test.locale,config.voice,config.ttsKey,request.signal);
+   const bytes=await synthesize('Hello, I am Smriti.',test.locale,getLocaleVoice(test.locale),config.ttsKey,request.signal);
    timbre={ok:true};sample=Buffer.from(bytes).toString('base64');
   }catch(e){timbre={ok:false,code:safeError(e,'tts_unavailable')};}
   return json({gemini,timbre,sample,model:config.model});
@@ -70,7 +71,7 @@ export async function POST(request:Request,{params}:{params:Promise<{operation:s
     :'Tell one gentle spoken story in the selected language. Only use a personal memory when it is present in the approved context. Otherwise, clearly make it a fictional story. Do not quiz the listener.';
    const output=await respond({mode:'companion',locale:state.locale,text:instruction,approved_context:z.array(itemSchema).parse(context.items||[]),logs:[],history:data.history,support_profile},request.signal);
    const config=providerConfig();let audio:Uint8Array|null=null;let audioError:string|null=null;
-   if(config.ttsKey)try{audio=await synthesize(output.result.reply,state.locale,config.voice,config.ttsKey,request.signal);}
+   if(config.ttsKey)try{audio=await synthesize(output.result.reply,state.locale,getLocaleVoice(state.locale),config.ttsKey,request.signal);}
    catch(e){audioError=e instanceof Error?e.message:'tts_unavailable';}
    await rpc('check',data);
    await rpc('finish',{...data,transcript:data.kind==='greeting'?'[Smriti greeting requested]':'[Smriti story requested]',result:output.result,metadata:{provenance:'ui_'+data.kind,stt:'not_applicable',tts:audio?'timbre-v2.5':audioError?'failed':'none',llm:output.model}});
@@ -111,7 +112,7 @@ export async function POST(request:Request,{params}:{params:Promise<{operation:s
    const support_profile=supportSchema.parse(support.data||{});
    const output=await respond({mode:'companion',locale:state.locale,text:data.text,approved_context:z.array(itemSchema).parse(context.items),logs:[],history:data.history,support_profile},request.signal);
    await rpc('check',data);const c=providerConfig();let audio:Uint8Array|null=null;let audioError:string|null=null;
-   if(!output.result.stop&&c.ttsKey)try{audio=await synthesize(output.result.reply,state.locale,c.voice,c.ttsKey,request.signal);}catch(e){audioError=e instanceof Error?e.message:'tts_unavailable';}
+   if(!output.result.stop&&c.ttsKey)try{audio=await synthesize(output.result.reply,state.locale,getLocaleVoice(state.locale),c.ttsKey,request.signal);}catch(e){audioError=e instanceof Error?e.message:'tts_unavailable';}
    await rpc('check',data);await rpc('finish',{...data,transcript:data.text,result:output.result,metadata:{stt:data.source==='stream'?'prisma-stream':'prisma-rest',tts:audio?'timbre-v2.5':audioError?'failed':'none',llm:output.model,provenance:'browser_transcript_unverified',mode:c.mode}});
    if(output.result.stop)await rpc('stop',data);
    return json({...output,audio:audio?Buffer.from(audio).toString('base64'):null,audioError,contentType:audio?'audio/wav':null});
